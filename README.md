@@ -33,7 +33,7 @@ An interactive, web-based limnological observatory dashboard visualizing multi-y
 ## 🚀 Local Execution
 To run this dashboard locally:
 ```bash
-git clone [https://github.com/](https://github.com/)<YOUR_GITHUB_USERNAME>/greiner-lake-portal.git
+git clone https://github.com/mukulgauthankar/greiner-lake-portal.git
 cd greiner-lake-portal
 pip install -r requirements.txt
 streamlit run app.py
