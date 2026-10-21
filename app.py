@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling for Academic Factsheets & Layout
+# Custom Styling for Academic Factsheets, Equal-Height Profile Cards & Balanced Logo Ribbon
 st.markdown("""
 <style>
     .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
@@ -75,6 +75,36 @@ st.markdown("""
         border-bottom: 1px solid #e2e8f0;
         color: #334155;
     }
+    /* Exactly Equal Profile Cards */
+    .profile-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 22px 18px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        height: 390px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+    .lab-link-btn {
+        display: inline-block;
+        padding: 6px 16px;
+        background-color: #f1f5f9;
+        color: #0f172a !important;
+        text-decoration: none !important;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    .lab-link-btn:hover {
+        background-color: #e2e8f0;
+        border-color: #94a3b8;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -92,6 +122,28 @@ def load_data():
     return df
 
 df = load_data()
+
+# Helper to normalize logos onto a uniform bounding canvas while preserving native st.image enlarge
+@st.cache_data
+def get_standardized_logo(path_candidates, target_size=(500, 220)):
+    target_path = None
+    for p in path_candidates:
+        if os.path.exists(p):
+            target_path = p
+            break
+
+    if not target_path:
+        return None
+
+    try:
+        im = Image.open(target_path).convert("RGBA")
+        im.thumbnail(target_size, Image.Resampling.LANCZOS)
+        canvas = Image.new("RGBA", target_size, (255, 255, 255, 0))
+        offset = ((target_size[0] - im.width) // 2, (target_size[1] - im.height) // 2)
+        canvas.paste(im, offset, im)
+        return canvas
+    except Exception:
+        return target_path
 
 # Site Coordinates
 GREINER_LAT = 69.177067
@@ -141,10 +193,10 @@ df_filtered = df_cycles.copy()
 if not df_filtered.empty and depth_filter != "Both Layers":
     df_filtered = df_filtered[df_filtered["mooring_position"] == depth_filter]
 
-# Submerged records (depth > 1.5 m) to strictly exclude deck handling
+# Submerged records (depth > 1.5 m)
 df_submerged = df_filtered[df_filtered["depth_m"] > 1.5] if not df_filtered.empty else pd.DataFrame()
 
-# ----------------- 1. TOP BENCHMARK RIBBON (DIRECTLY AT TOP) -----------------
+# ----------------- 1. TOP BENCHMARK RIBBON -----------------
 with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded=True):
     if df_submerged.empty:
         st.info("👈 Select one or more deployment cycles from the sidebar to view diagnostics.")
@@ -160,7 +212,7 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
             help="Dissolved Oxygen range (mg/L). Captures seasonal minimum drawdown and spring hyper-oxygenation."
         )
 
-        # 2. Water Temperature Range (Submerged only)
+        # 2. Water Temperature Range
         min_temp = df_submerged["temperature_c"].min()
         max_temp = df_submerged["temperature_c"].max()
         c2.metric(
@@ -186,11 +238,12 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
         )
 
 # ----------------- 2. PRIMARY NAVIGATION TABS -----------------
-tab_map, tab_doy, tab_time, tab_strat = st.tabs([
+tab_map, tab_doy, tab_time, tab_strat, tab_team = st.tabs([
     "🗺️ Geographic Setting & Lake Framework",
     "❄️ Annual Limnological Cycle (Aug → Jul)",
     "📈 Continuous Multi-Year Series",
-    "🔬 Vertical Stratification (Surface − Bottom)"
+    "🔬 Vertical Stratification (Surface − Bottom)",
+    "👥 Research Team & Institutional Partners"
 ])
 
 # ----------------- TAB 1: GEOGRAPHIC SETTING & LAKE FRAMEWORK -----------------
@@ -472,6 +525,187 @@ else:
             st.plotly_chart(fig_diff_do, width="stretch")
         else:
             st.info("Stratification calculations require overlapping Surface and Bottom records for the selected years.")
+
+# ----------------- TAB 5: RESEARCH TEAM & INSTITUTIONAL PARTNERS -----------------
+with tab_team:
+    st.subheader("Scientific Research Team")
+    st.caption("Autonomous mooring operations, sensor harmonization, and High-Arctic limnological research.")
+
+    col_t1, col_t2, col_t3 = st.columns(3)
+
+    def get_initials(name):
+        clean = name.replace("Prof. ", "").replace("Dr. ", "").strip()
+        parts = clean.split()
+        return f"{parts[0][0]}{parts[-1][0]}".upper()
+
+    def display_member(col, name, role, inst, bio, img_keys, link_url=None, link_label="Visit Lab Website ↗"):
+        with col:
+            photo_found = None
+            for ik in img_keys:
+                if os.path.exists(ik):
+                    try:
+                        photo_found = Image.open(ik)
+                        break
+                    except Exception:
+                        continue
+
+            # Avatar or Photo
+            if photo_found is not None:
+                st.image(photo_found, use_container_width=True)
+            else:
+                initials = get_initials(name)
+                st.markdown(
+                    f'<div style="background-color:#e2e8f0; border-radius:50%; width:100px; height:100px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>',
+                    unsafe_allow_html=True
+                )
+
+            # Button element or height placeholder
+            if link_url:
+                btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
+            else:
+                btn_element = '<div style="height:32px;"></div>'
+
+            # Formatted card string without leading line spaces to prevent Markdown code block triggers
+            card_html = (
+                '<div class="profile-card" style="margin-top: 10px;">'
+                '<div>'
+                f'<div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">{name}</div>'
+                f'<div style="font-size: 14px; font-weight: 600; color: #0284c7; margin-bottom: 4px;">{role}</div>'
+                f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst}</div>'
+                '</div>'
+                f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: left; border-top: 1px solid #f1f5f9; padding-top: 10px; flex-grow: 1;">{bio}</div>'
+                f'<div style="margin-top: 10px;">{btn_element}</div>'
+                '</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+
+    display_member(
+        col_t1,
+        "Mukund R. Gauthankar",
+        "Lead Researcher & Ph.D. Candidate",
+        "Université du Québec à Chicoutimi (UQAC) / GRIL",
+        "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
+        ["assets/logos/mukund.jpg", "assets/mukund.jpg", "mukund.jpg"]
+    )
+
+    display_member(
+        col_t2,
+        "Prof. Milla Rautio",
+        "Principal Investigator & Supervisor",
+        "UQAC / GRIL / CEN / Canada Research Chair",
+        "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
+        ["assets/logos/milla.jpg", "assets/milla.jpg", "milla.jpg"],
+        link_url="https://www.rautioaqualab.com/",
+        link_label="Rautio AquaLab ↗"
+    )
+
+    display_member(
+        col_t3,
+        "Prof. Catherine Girard",
+        "Co-Supervisor & Co-Direction",
+        "Université Laval / GRIL / Institut nordique du Québec",
+        "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
+        ["assets/logos/catherine.jpg", "assets/catherine.jpg", "catherine.jpg"],
+        link_url="https://patrimoinemicrobien.ca/",
+        link_label="Patrimoine Microbien ↗"
+    )
+
+    st.markdown("---")
+    st.subheader("Institutional Affiliations & Research Partners")
+    st.caption("Collaborative universities, northern research facilities, and scientific programs supporting the observatory:")
+
+    def render_native_logo(col, candidate_paths, caption_label):
+        with col:
+            logo_obj = get_standardized_logo(candidate_paths)
+            if logo_obj is not None:
+                st.image(logo_obj, caption=caption_label, use_container_width=True)
+            else:
+                st.info(caption_label)
+
+    # Row 1: Academic & University Consortium (4 Equal Columns)
+    r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4)
+    render_native_logo(
+        r1_c1,
+        ["assets/logos/UQAC_Primary_Logo.png", "assets/logos/uqac.png", "UQAC_Primary_Logo.png"],
+        "UQAC (Host Academic Institution)"
+    )
+    render_native_logo(
+        r1_c2,
+        ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
+        "Université Laval (Co-Direction Partner)"
+    )
+    render_native_logo(
+        r1_c3,
+        ["assets/logos/logo-cen-couleur-color.png", "assets/logos/cen.png", "logo-cen-couleur-color.png"],
+        "Centre d'études nordiques (CEN)"
+    )
+    render_native_logo(
+        r1_c4,
+        ["assets/logos/gril.png", "gril.png"],
+        "GRIL (Limnology Research Group)"
+    )
+
+    # Row 2: Polar Operations, Networks & FROST (3 Equal Columns)
+    r2_c1, r2_c2, r2_c3 = st.columns(3)
+    render_native_logo(
+        r2_c1,
+        ["assets/logos/polar.png", "polar.png"],
+        "Polar Knowledge Canada (POLAR / CHARS)"
+    )
+    render_native_logo(
+        r2_c2,
+        ["assets/logos/arcticnet.png", "arcticnet.png"],
+        "ArcticNet (Network of Centres of Excellence)"
+    )
+    render_native_logo(
+        r2_c3,
+        [
+            "assets/logos/FROST Logo Sami.avif",
+            "assets/logos/FROST Logo Sami.png",
+            "assets/logos/frost.png",
+            "FROST Logo Sami.avif",
+            "FROST Logo Sami.png"
+        ],
+        "FROST Research Program"
+    )
+
+    st.markdown("---")
+    st.markdown("#### 🏛️ Canadian High Arctic Research Station (CHARS Campus)")
+
+    chars_paths = [
+        "assets/logos/chars-campus.jpg",
+        "assets/logos/chars.jpg",
+        "chars-campus.jpg"
+    ]
+    chars_img = None
+    for cp in chars_paths:
+        if os.path.exists(cp):
+            try:
+                chars_img = Image.open(cp)
+                break
+            except Exception:
+                continue
+
+    if chars_img is not None:
+        st.image(
+            chars_img,
+            caption="Canadian High Arctic Research Station (CHARS) Campus, Cambridge Bay (Iqaluktuuttiaq), Nunavut — Base of operations for Greiner Lake limnological campaigns.",
+            use_container_width=True
+        )
+
+    st.markdown("""
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-top: 10px; margin-bottom: 14px;">
+    <div style="font-size: 14.5px; font-weight: 600; color: #0f172a; margin-bottom: 4px;">
+        Canadian High Arctic Research Station (CHARS)
+    </div>
+    <div style="font-size: 12.5px; color: #0284c7; font-weight: 600; margin-bottom: 8px;">
+        📍 1 Uvajuq Rd., Cambridge Bay (Iqaluktuuttiaq), Nunavut X0B 0C0, Canada
+    </div>
+    <div style="font-size: 13px; color: #475569; line-height: 1.55;">
+        Operated by <strong>Polar Knowledge Canada (POLAR)</strong>. Serves as the primary operational base and year-round staging campus for Greiner Lake limnological campaigns, providing specialized cold-room analytical laboratories, sensor calibration facilities, and winter snowmobile/open-water boat transit logistics across the Kitikmeot Region.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Data Export Section
 st.markdown("---")
