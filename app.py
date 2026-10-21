@@ -266,15 +266,19 @@ with tab_map:
 
     with col_map:
         st.subheader("Station Location & Regional Setting")
+
+        # Free, Keyless Basemaps: Esri Satellite by default + OpenStreetMap
         m = folium.Map(
             location=[GREINER_LAT, GREINER_LON],
             zoom_start=9,
-            tiles="CartoDB positron"
-        )
-        folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             attr="Esri World Imagery",
-            name="Satellite Imagery",
+            name="Satellite Imagery"
+        )
+        folium.TileLayer(
+            tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            attr="&copy; OpenStreetMap contributors",
+            name="OpenStreetMap (Street/Topo)",
             overlay=False
         ).add_to(m)
         folium.Marker(
@@ -693,12 +697,22 @@ with tab_team:
     ]
     chars_img = None
     for cp in chars_paths:
-        if os.path.exists(cp):
-            try:
-                chars_img = Image.open(cp)
-                break
-            except Exception:
-                continue
+        fname = os.path.basename(cp)
+        test_cp = [
+            cp,
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
+        ]
+        for tp in test_cp:
+            if os.path.exists(tp):
+                try:
+                    chars_img = Image.open(tp)
+                    break
+                except Exception:
+                    continue
+        if chars_img:
+            break
 
     if chars_img is not None:
         st.image(
