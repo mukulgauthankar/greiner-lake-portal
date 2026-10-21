@@ -1,8 +1,4 @@
-import os
-
-target_app_path = r"C:/Users/mrgauthank/AppData/Local/Programs/Antigravity IDE/Greiner/app.py"
-
-clean_app_code = r'''import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -117,7 +113,7 @@ def load_data():
     df = pd.read_csv("greiner_lake_daily_summary.csv")
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
-    
+
     if "hydro_doy" not in df.columns:
         def calc_hydro_doy(dt):
             cycle_start_year = dt.year if dt.month >= 8 else dt.year - 1
@@ -132,7 +128,7 @@ df = load_data()
 def get_standardized_logo(path_candidates, target_size=(500, 220)):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
-    
+
     for p in path_candidates:
         fname = os.path.basename(p)
         test_paths = [
@@ -149,10 +145,10 @@ def get_standardized_logo(path_candidates, target_size=(500, 220)):
                 break
         if target_path:
             break
-            
+
     if not target_path:
         return None
-        
+
     try:
         im = Image.open(target_path).convert("RGBA")
         im.thumbnail(target_size, Image.Resampling.LANCZOS)
@@ -220,7 +216,7 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
         st.info("👈 Select one or more deployment cycles from the sidebar to view diagnostics.")
     else:
         c1, c2, c3, c4 = st.columns(4)
-        
+
         # 1. Dissolved Oxygen Range
         min_do = df_submerged["do_mg_l"].min()
         max_do = df_submerged["do_mg_l"].max()
@@ -229,7 +225,7 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
             f"{min_do:.2f} – {max_do:.2f} mg/L" if pd.notnull(min_do) else "N/A",
             help="Dissolved Oxygen range (mg/L). Captures seasonal minimum drawdown and spring hyper-oxygenation."
         )
-        
+
         # 2. Water Temperature Range
         min_temp = df_submerged["temperature_c"].min()
         max_temp = df_submerged["temperature_c"].max()
@@ -238,7 +234,7 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
             f"{min_temp:.1f} – {max_temp:.1f} °C" if pd.notnull(min_temp) else "N/A",
             help="True submerged water temperature range (°C; depth > 1.5 m), strictly excluding deck handling."
         )
-        
+
         # 3. Peak Submerged PAR
         max_par = df_submerged["par_umol_m2_s"].max()
         c3.metric(
@@ -246,7 +242,7 @@ with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded
             f"{max_par:.1f} µmol/m²/s" if pd.notnull(max_par) else "N/A",
             help="Maximum submerged Photosynthetically Active Radiation recorded during open-water summer / early melt."
         )
-        
+
         # 4. Total Observations
         total_days = df_filtered["timestamp"].nunique()
         c4.metric(
@@ -267,7 +263,7 @@ tab_map, tab_doy, tab_time, tab_strat, tab_team = st.tabs([
 # ----------------- TAB 1: GEOGRAPHIC SETTING & LAKE FRAMEWORK -----------------
 with tab_map:
     col_map, col_chars = st.columns([1.1, 0.9])
-    
+
     with col_map:
         st.subheader("Station Location & Regional Setting")
         m = folium.Map(
@@ -301,7 +297,7 @@ with tab_map:
 
         st.markdown("---")
         st.subheader("Lake Basin Bathymetry & Mooring Station")
-        
+
         bathy_paths = [
             "GRL BATHY  PNG.png",
             "GRL BATHY PNG.png",
@@ -309,7 +305,7 @@ with tab_map:
             "C:/Users/mrgauthank/Downloads/GRL BATHY  PNG.png",
             "C:/Users/mrgauthank/Downloads/GRL BATHY PNG.png"
         ]
-        
+
         found_img = None
         for p in bathy_paths:
             if os.path.exists(p):
@@ -318,7 +314,7 @@ with tab_map:
                     break
                 except Exception:
                     continue
-        
+
         if found_img is not None:
             st.image(
                 found_img,
@@ -330,7 +326,7 @@ with tab_map:
 
     with col_chars:
         st.subheader("Environmental & Limnological Profile")
-        
+
         html_cards = """
 <div class="framework-card">
     <h4>📍 Geography & Morphometry</h4>
@@ -548,9 +544,9 @@ else:
 with tab_team:
     st.subheader("Scientific Research Team")
     st.caption("Autonomous mooring operations, sensor harmonization, and High-Arctic limnological research.")
-    
+
     col_t1, col_t2, col_t3 = st.columns(3)
-    
+
     def get_initials(name):
         clean = name.replace("Prof. ", "").replace("Dr. ", "").strip()
         parts = clean.split()
@@ -566,7 +562,7 @@ with tab_team:
                         break
                     except Exception:
                         continue
-            
+
             # Avatar or Photo
             if photo_found is not None:
                 st.image(photo_found, use_container_width=True)
@@ -576,13 +572,13 @@ with tab_team:
                     f'<div style="background-color:#e2e8f0; border-radius:50%; width:100px; height:100px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>',
                     unsafe_allow_html=True
                 )
-            
+
             # Button element or height placeholder
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
             else:
                 btn_element = '<div style="height:32px;"></div>'
-            
+
             # Formatted card string without leading spaces to prevent Markdown code block triggers
             card_html = (
                 '<div class="profile-card" style="margin-top: 10px;">'
@@ -689,7 +685,7 @@ with tab_team:
 
     st.markdown("---")
     st.markdown("#### 🏛️ Canadian High Arctic Research Station (CHARS Campus)")
-    
+
     chars_paths = [
         "assets/logos/chars-campus.jpg",
         "assets/logos/chars.jpg",
@@ -736,9 +732,3 @@ if not df_filtered.empty:
         file_name="greiner_lake_filtered_data.csv",
         mime="text/csv"
     )
-'''
-
-with open(target_app_path, "w", encoding="utf-8") as f:
-    f.write(clean_app_code)
-
-print("SUCCESS: Fully overwritten local app.py with clean code!")
