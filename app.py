@@ -90,10 +90,11 @@ st.markdown("""
         background-color: #e2e8f0;
         border-color: #94a3b8;
     }
-    /* Balanced logo presentation */
+    /* Center logos nicely in their columns */
     .stImage > img {
         margin-left: auto;
         margin-right: auto;
+        display: block;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -191,11 +192,12 @@ def load_data():
 
 df = load_data()
 
-# Robust Logo Processor:
-# 1. Strips out both transparent AND white margins (fixes AquaLab and Polar being tiny)
-# 2. Fits on a 1200x550 canvas so circular and wide logos share equal visual weight
+# Smart Logo Loader:
+# 1. Trims all surrounding transparent AND white borders automatically
+# 2. For circular/square emblems (POLAR, FROST, AquaLab), returns the clean square graphic directly so it renders at full badge diameter!
+# 3. For wide banners, places them on a standardized high-res banner canvas
 @st.cache_data
-def get_standardized_logo(path_candidates, target_canvas=(1200, 550), pad_ratio=0.88):
+def get_standardized_logo(path_candidates):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
 
@@ -222,7 +224,7 @@ def get_standardized_logo(path_candidates, target_canvas=(1200, 550), pad_ratio=
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # 1. Smart Autocrop: crop transparent AND solid white padding around logo
+        # Smart Autocrop: crop transparent AND solid white padding around logo
         alpha = im.split()[-1]
         bbox_alpha = alpha.getbbox()
 
@@ -255,18 +257,22 @@ def get_standardized_logo(path_candidates, target_canvas=(1200, 550), pad_ratio=
             )
             im = im.crop(b_expanded)
 
-        # 2. Scale image within the target canvas
-        max_w = int(target_canvas[0] * pad_ratio)
-        max_h = int(target_canvas[1] * pad_ratio)
-        im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+        # Aspect ratio check:
+        # If it's a square/circular emblem (like POLAR, FROST, AquaLab):
+        # Return the tightly-cropped graphic directly so it matches the FROST circle size!
+        aspect = im.width / im.height
+        if 0.75 <= aspect <= 1.35:
+            return im
 
-        # 3. Center on transparent canvas
+        # For wide banners (UQAC, ULaval, GRIL, CEN, ArcticNet, etc.):
+        target_canvas = (1400, 600)
+        im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
         offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
         return canvas
     except Exception:
-        # Fallback for unhandled image formats (like raw AVIF)
+        # Fallback for formats not decoded by PIL (like raw AVIF)
         return target_path
 
 # Site Coordinates
@@ -612,7 +618,6 @@ else:
         st.subheader("2. Annual Cycle Decomposition (Dedicated Multi-Year Grid)")
         st.caption("Each deployment cycle displayed in its own dedicated card showing Surface and Bottom strata simultaneously.")
 
-        # STRICT CHRONOLOGICAL ORDER: 2017-2018 first, 2025-2026 last
         valid_cycles = [c for c in CHRONOLOGICAL_YEAR_ORDER if c in selected_cycles and c in df["deployment_cycle"].values]
 
         for i in range(0, len(valid_cycles), 2):
@@ -736,11 +741,8 @@ with tab_team:
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
             if logo_obj is not None:
-                # If logo is a string (e.g. raw AVIF fallback), render with fixed width so it doesn't blow up
-                if isinstance(logo_obj, str):
-                    st.image(logo_obj, caption=caption_label, width=220)
-                else:
-                    st.image(logo_obj, caption=caption_label, use_container_width=True)
+                # If logo is an image or string, render cleanly centered
+                st.image(logo_obj, caption=caption_label, use_container_width=True)
             else:
                 st.info(caption_label)
 
@@ -781,10 +783,16 @@ with tab_team:
     )
 
     # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
+    # Both POLAR and FROST render as standalone circular emblems filling their columns at the exact same size!
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
-        ["assets/logos/polar.png", "polar.png"],
+        [
+            "assets/logos/polar.png",
+            "assets/logos/polar.webp",
+            "polar.png",
+            "polar.webp"
+        ],
         "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
