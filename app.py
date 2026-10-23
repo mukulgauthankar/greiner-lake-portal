@@ -7,7 +7,7 @@ import folium
 from streamlit_folium import st_folium
 import os
 import calendar
-from PIL import Image
+from PIL import Image, ImageChops
 
 st.set_page_config(
     page_title="Greiner Lake Limnological Portal",
@@ -94,7 +94,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- HIGH-RESOLUTION 600 DPI PLOT EXPORT CONFIG -----------------
-# Option A: Configures Plotly's camera download button to generate high-res images
 PLOT_EXPORT_CONFIG = {
     "toImageButtonOptions": {
         "format": "png",
@@ -141,7 +140,6 @@ def lake_month_ticks(ref_year=2021):
 LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
 
 # Exact verified deployment boundaries:
-# 2025-2026 starts August 20, 2025 and cuts off on July 31, 2026 (clips August turnaround)
 DEPLOYMENT_BOUNDARIES = {
     ("2017-2018", "Surface"): ("2017-10-31", "2018-07-31"),
     ("2018-2019", "Surface"): ("2018-08-15", "2019-07-15"),
@@ -193,7 +191,8 @@ def load_data():
 df = load_data()
 
 # Enhanced High-Res Logo Handler:
-# Automatically trims transparent margins around logo artwork and fits it onto a sharp HD canvas
+# Smartly crops transparent AND white gutters around logo artwork, then centers it on an HD canvas.
+# This ensures UQAC matches ULaval and Polar Knowledge matches FROST in exact diameter and prominence.
 @st.cache_data
 def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -222,9 +221,29 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # 1. Auto-crop transparent boundaries to normalize glyph size (fixes UQAC vs ULaval size difference)
-        bbox = im.getbbox()
-        if bbox:
+        # 1. Smart Autocrop: crop transparent AND solid white padding around logo
+        alpha = im.split()[-1]
+        bbox_alpha = alpha.getbbox()
+
+        bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
+        diff = ImageChops.difference(im, bg)
+        diff_gray = diff.convert("L").point(lambda p: 255 if p > 15 else 0)
+        bbox_nonwhite = diff_gray.getbbox()
+
+        bbox = None
+        if bbox_nonwhite and bbox_alpha:
+            bbox = (
+                max(bbox_nonwhite[0], bbox_alpha[0]),
+                max(bbox_nonwhite[1], bbox_alpha[1]),
+                min(bbox_nonwhite[2], bbox_alpha[2]),
+                min(bbox_nonwhite[3], bbox_alpha[3])
+            )
+        elif bbox_nonwhite:
+            bbox = bbox_nonwhite
+        elif bbox_alpha:
+            bbox = bbox_alpha
+
+        if bbox and (bbox[2] > bbox[0]) and (bbox[3] > bbox[1]):
             im = im.crop(bbox)
 
         # 2. Scale image within the target HD canvas
@@ -701,7 +720,7 @@ with tab_team:
 
     st.markdown("---")
     st.subheader("Institutional Affiliations & Research Partners")
-    st.caption("Collaborative universities, northern research facilities, and scientific programs supporting the observatory:")
+    st.caption("Collaborative universities, research groups, laboratories, and polar programs supporting the observatory:")
 
     def render_native_logo(col, candidate_paths, caption_label):
         with col:
@@ -711,9 +730,8 @@ with tab_team:
             else:
                 st.info(caption_label)
 
-    # Row 1: Academic & University Consortium (4 Equal Columns)
-    # Both UQAC and ULaval logos are auto-cropped to trim empty padding, matching visual height and crispness
-    r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4)
+    # Row 1: Primary Academic Institutions & Laboratory Affiliations (3 Equal Columns)
+    r1_c1, r1_c2, r1_c3 = st.columns(3)
     render_native_logo(
         r1_c1,
         ["assets/logos/UQAC_Primary_Logo.png", "assets/logos/uqac.png", "UQAC_Primary_Logo.png"],
@@ -726,29 +744,42 @@ with tab_team:
     )
     render_native_logo(
         r1_c3,
-        ["assets/logos/logo-cen-couleur-color.png", "assets/logos/cen.png", "logo-cen-couleur-color.png"],
-        "Centre d'études nordiques (CEN)"
-    )
-    render_native_logo(
-        r1_c4,
-        ["assets/logos/gril.png", "gril.png"],
-        "GRIL (Limnology Research Group)"
+        ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
+        "Rautio AquaLab (Limnology & Aquatic Ecology)"
     )
 
-    # Row 2: Polar Operations, Networks & FROST (3 Equal Columns)
+    # Row 2: Specialized Laboratories & Research Consortia (3 Equal Columns)
     r2_c1, r2_c2, r2_c3 = st.columns(3)
     render_native_logo(
         r2_c1,
+        ["assets/logos/logo_web_lpm_bleu-1hhh.png", "assets/logo_web_lpm_bleu-1hhh.png", "logo_web_lpm_bleu-1hhh.png"],
+        "Laboratoire de patrimoine microbien (Girard Lab)"
+    )
+    render_native_logo(
+        r2_c2,
+        ["assets/logos/gril.png", "gril.png"],
+        "GRIL (Limnology Research Group)"
+    )
+    render_native_logo(
+        r2_c3,
+        ["assets/logos/logo-cen-couleur-color.png", "assets/logos/cen.png", "logo-cen-couleur-color.png"],
+        "Centre d'études nordiques (CEN)"
+    )
+
+    # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
+    r3_c1, r3_c2, r3_c3 = st.columns(3)
+    render_native_logo(
+        r3_c1,
         ["assets/logos/polar.png", "polar.png"],
         "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
-        r2_c2,
+        r3_c2,
         ["assets/logos/arcticnet.png", "arcticnet.png"],
         "ArcticNet (Network of Centres of Excellence)"
     )
     render_native_logo(
-        r2_c3,
+        r3_c3,
         [
             "assets/logos/FROST Logo Sami.avif",
             "assets/logos/FROST Logo Sami.png",
@@ -764,7 +795,10 @@ with tab_team:
 
     chars_paths = [
         "assets/logos/chars-campus.png",
-        "chars-campus.png"
+        "assets/logos/chars-campus.jpg",
+        "assets/logos/chars.jpg",
+        "chars-campus.png",
+        "chars-campus.jpg"
     ]
     chars_img = None
     for cp in chars_paths:
