@@ -214,7 +214,7 @@ with tab_map:
             tiles=None
         )
 
-        # --- BASE LAYERS (Mutually Exclusive Radio Buttons) ---
+        # --- BASE LAYERS (3 Clean, Reliable Keyless Basemaps) ---
         # 1. Esri Satellite Imagery (Default)
         folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -233,31 +233,12 @@ with tab_map:
             control=True
         ).add_to(m)
 
-        # 3. OpenStreetMap (Street / Settlement)
+        # 3. OpenStreetMap (Town & Roads)
         folium.TileLayer(
             tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             attr="&copy; OpenStreetMap contributors",
             name="🗺️ OpenStreetMap (Town & Roads)",
             overlay=False,
-            control=True
-        ).add_to(m)
-
-        # 4. Esri Oceans / Coastal Relief
-        folium.TileLayer(
-            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
-            attr="Esri, GEBCO, NOAA",
-            name="🌊 Ocean & Coastal Basemap",
-            overlay=False,
-            control=True
-        ).add_to(m)
-
-        # --- OVERLAY LAYERS (Toggleable Checkboxes) ---
-        # 5. OpenSeaMap (Marine Navigation & Coastal Markers)
-        folium.TileLayer(
-            tiles="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
-            attr="&copy; OpenSeaMap contributors",
-            name="⚓ Marine Navigation (OpenSeaMap)",
-            overlay=True,
             control=True
         ).add_to(m)
 
@@ -278,7 +259,7 @@ with tab_map:
             fill_color="blue"
         ).add_to(m)
 
-        # Clean Layer Switcher (collapsed=True keeps the map view uncluttered until hovered/clicked)
+        # Clean Layer Switcher (collapsed=True keeps map clean until hovered/clicked)
         folium.LayerControl(position="topright", collapsed=True).add_to(m)
 
         st_folium(m, height=460, width=None)
