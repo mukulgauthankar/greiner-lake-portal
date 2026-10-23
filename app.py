@@ -408,22 +408,23 @@ with tab_map:
         else:
             st.info("Bathymetry image not found. Ensure 'GRL BATHY  PNG.png' is in your Greiner folder.")
 
-        # --- COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
+        # --- COLLAPSIBLE EXPANDER CHECKING ROOT DIRECTORY FIRST ---
         with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
             st.markdown("#### 1. RBR maestro³ Multi-Channel Logger Architecture")
             st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, PAR, CDOM).")
 
             sensor_paths = [
                 "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                "assets/ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
                 "rbr_sensor.png",
-                "rbr_maestro_exploded.png",
-                "C:/Users/mrgauthank/Downloads/ede28e9d-98ae-4aa9-93f5-0267526055bc.png"
+                "rbr_maestro_exploded.png"
             ]
             sensor_img = None
             for sp in sensor_paths:
-                if os.path.exists(sp):
+                full_sp = sp if os.path.isabs(sp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), sp)
+                if os.path.exists(full_sp):
                     try:
-                        sensor_img = Image.open(sp)
+                        sensor_img = Image.open(full_sp)
                         break
                     except Exception:
                         continue
@@ -435,7 +436,7 @@ with tab_map:
                     use_container_width=True
                 )
             else:
-                st.info("Sensor exploded diagram image not found. Ensure 'ede28e9d-98ae-4aa9-93f5-0267526055bc.png' is in your Greiner folder.")
+                st.info("Sensor exploded diagram image not found. Ensure 'ede28e9d-98ae-4aa9-93f5-0267526055bc.png' is in your root Greiner folder.")
 
             st.markdown("---")
             st.markdown("#### 2. Dual-Depth Sub-Surface Mooring Rig Setup")
@@ -443,15 +444,16 @@ with tab_map:
 
             mooring_paths = [
                 "Mooring setup.png",
+                "assets/Mooring setup.png",
                 "mooring_setup.png",
-                "mooring_rig.png",
-                "C:/Users/mrgauthank/Downloads/Mooring setup.png"
+                "mooring_rig.png"
             ]
             mooring_img = None
             for mp in mooring_paths:
-                if os.path.exists(mp):
+                full_mp = mp if os.path.isabs(mp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), mp)
+                if os.path.exists(full_mp):
                     try:
-                        mooring_img = Image.open(mp)
+                        mooring_img = Image.open(full_mp)
                         break
                     except Exception:
                         continue
@@ -463,7 +465,7 @@ with tab_map:
                     use_container_width=True
                 )
             else:
-                st.info("Mooring setup diagram image not found. Ensure 'Mooring setup.png' is in your Greiner folder.")
+                st.info("Mooring setup diagram image not found. Ensure 'Mooring setup.png' is in your root Greiner folder.")
 
     with col_chars:
         st.subheader("Environmental & Limnological Profile")
@@ -811,16 +813,7 @@ with tab_team:
     )
     render_native_logo(
         r1_c3,
-        [
-            "assets/logos/Aqua Lab Logo.png",
-            "assets/logos/AquaLab Logo.png",
-            "assets/Aqua Lab Logo.png",
-            "assets/AquaLab Logo.png",
-            "Aqua Lab Logo.png",
-            "AquaLab Logo.png",
-            "assets/logos/aqualab.png",
-            "aqualab.png"
-        ],
+        ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
         "Rautio AquaLab (Limnology & Aquatic Ecology)"
     )
 
@@ -846,12 +839,7 @@ with tab_team:
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
-        [
-            "assets/logos/polar.png",
-            "assets/logos/polar.webp",
-            "polar.png",
-            "polar.webp"
-        ],
+        ["assets/logos/polar.png", "polar.png"],
         "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
@@ -888,7 +876,6 @@ with tab_team:
             cp,
             os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
         ]
         for tp in test_cp:
