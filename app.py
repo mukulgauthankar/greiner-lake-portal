@@ -7,7 +7,7 @@ import folium
 from streamlit_folium import st_folium
 import os
 import calendar
-from PIL import Image
+from PIL import Image, ImageChops
 
 st.set_page_config(
     page_title="Greiner Lake Limnological Portal",
@@ -94,7 +94,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- HIGH-RESOLUTION 600 DPI PLOT EXPORT CONFIG -----------------
-# Option A: Configures Plotly's camera download button to generate high-res images
 PLOT_EXPORT_CONFIG = {
     "toImageButtonOptions": {
         "format": "png",
@@ -141,7 +140,6 @@ def lake_month_ticks(ref_year=2021):
 LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
 
 # Exact verified deployment boundaries:
-# 2025-2026 starts August 20, 2025 and cuts off on July 31, 2026 (clips August turnaround)
 DEPLOYMENT_BOUNDARIES = {
     ("2017-2018", "Surface"): ("2017-10-31", "2018-07-31"),
     ("2018-2019", "Surface"): ("2018-08-15", "2019-07-15"),
@@ -192,10 +190,10 @@ def load_data():
 
 df = load_data()
 
-# Enhanced High-Res Logo Handler:
-# Automatically trims transparent margins around logo artwork and fits it onto a sharp HD canvas
+# Smart Logo Normalizer:
+# Handles both wide rectangular logos and circular emblems cleanly without blur or size disparity
 @st.cache_data
-def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
+def get_standardized_logo(path_candidates, is_square_emblem=False):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
 
@@ -222,17 +220,45 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # 1. Auto-crop transparent boundaries to normalize glyph size (fixes UQAC vs ULaval size difference)
-        bbox = im.getbbox()
-        if bbox:
+        # Smart Autocrop: crop transparent AND solid white padding around logo
+        bbox = None
+        alpha = im.split()[-1]
+        bbox_alpha = alpha.getbbox()
+
+        bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
+        diff = ImageChops.difference(im, bg)
+        diff_gray = diff.convert("L").point(lambda p: 255 if p > 12 else 0)
+        bbox_nonwhite = diff_gray.getbbox()
+
+        if bbox_nonwhite and bbox_alpha:
+            bbox = (
+                max(bbox_nonwhite[0], bbox_alpha[0]),
+                max(bbox_nonwhite[1], bbox_alpha[1]),
+                min(bbox_nonwhite[2], bbox_alpha[2]),
+                min(bbox_nonwhite[3], bbox_alpha[3])
+            )
+        elif bbox_nonwhite:
+            bbox = bbox_nonwhite
+        elif bbox_alpha:
+            bbox = bbox_alpha
+
+        if bbox and (bbox[2] > bbox[0]) and (bbox[3] > bbox[1]):
             im = im.crop(bbox)
 
-        # 2. Scale image within the target HD canvas
+        # Target canvas selection:
+        # Circular badges (POLAR, FROST) use an 800x800 square canvas
+        # Rectangular banners (UQAC, ULaval, ArcticNet) use an 1600x700 wide canvas
+        if is_square_emblem:
+            target_canvas = (800, 800)
+            pad_ratio = 0.94
+        else:
+            target_canvas = (1600, 700)
+            pad_ratio = 0.88
+
         max_w = int(target_canvas[0] * pad_ratio)
         max_h = int(target_canvas[1] * pad_ratio)
         im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
 
-        # 3. Center on high-res transparent canvas
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
         offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
@@ -703,49 +729,55 @@ with tab_team:
     st.subheader("Institutional Affiliations & Research Partners")
     st.caption("Collaborative universities, northern research facilities, and scientific programs supporting the observatory:")
 
-    def render_native_logo(col, candidate_paths, caption_label):
+    def render_native_logo(col, candidate_paths, caption_label, is_square_emblem=False):
         with col:
-            logo_obj = get_standardized_logo(candidate_paths)
+            logo_obj = get_standardized_logo(candidate_paths, is_square_emblem=is_square_emblem)
             if logo_obj is not None:
                 st.image(logo_obj, caption=caption_label, use_container_width=True)
             else:
                 st.info(caption_label)
 
-    # Row 1: Academic & University Consortium (4 Equal Columns)
-    # Both UQAC and ULaval logos are auto-cropped to trim empty padding, matching visual height and crispness
+    # Row 1: Academic & University Consortium (4 Equal Columns - Wide Rectangles)
     r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4)
     render_native_logo(
         r1_c1,
         ["assets/logos/UQAC_Primary_Logo.png", "assets/logos/uqac.png", "UQAC_Primary_Logo.png"],
-        "UQAC (Host Academic Institution)"
+        "UQAC (Host Academic Institution)",
+        is_square_emblem=False
     )
     render_native_logo(
         r1_c2,
         ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
-        "Université Laval (Co-Direction Partner)"
+        "Université Laval (Co-Direction Partner)",
+        is_square_emblem=False
     )
     render_native_logo(
         r1_c3,
         ["assets/logos/logo-cen-couleur-color.png", "assets/logos/cen.png", "logo-cen-couleur-color.png"],
-        "Centre d'études nordiques (CEN)"
+        "Centre d'études nordiques (CEN)",
+        is_square_emblem=False
     )
     render_native_logo(
         r1_c4,
         ["assets/logos/gril.png", "gril.png"],
-        "GRIL (Limnology Research Group)"
+        "GRIL (Limnology Research Group)",
+        is_square_emblem=False
     )
 
     # Row 2: Polar Operations, Networks & FROST (3 Equal Columns)
+    # Notice: is_square_emblem=True passed to POLAR and FROST so their circular badges match size perfectly!
     r2_c1, r2_c2, r2_c3 = st.columns(3)
     render_native_logo(
         r2_c1,
         ["assets/logos/polar.png", "polar.png"],
-        "Polar Knowledge Canada (POLAR / CHARS)"
+        "Polar Knowledge Canada (POLAR / CHARS)",
+        is_square_emblem=True
     )
     render_native_logo(
         r2_c2,
         ["assets/logos/arcticnet.png", "arcticnet.png"],
-        "ArcticNet (Network of Centres of Excellence)"
+        "ArcticNet (Network of Centres of Excellence)",
+        is_square_emblem=False
     )
     render_native_logo(
         r2_c3,
@@ -756,7 +788,8 @@ with tab_team:
             "FROST Logo Sami.avif",
             "FROST Logo Sami.png"
         ],
-        "FROST Research Program"
+        "FROST Research Program",
+        is_square_emblem=True
     )
 
     st.markdown("---")
