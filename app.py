@@ -759,13 +759,12 @@ with tab_team:
         "FROST Research Program"
     )
 
-    st.markdown("---")
+st.markdown("---")
     st.markdown("#### 🏛️ Canadian High Arctic Research Station (CHARS Campus)")
 
     chars_paths = [
-        "assets/logos/chars-campus.jpg",
-        "assets/logos/chars.jpg",
-        "chars-campus.jpg"
+        "assets/logos/chars-campus.png",
+        "chars-campus.png"
     ]
     chars_img = None
     for cp in chars_paths:
