@@ -93,6 +93,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------- CHRONOLOGICAL YEAR ORDER -----------------
+CHRONOLOGICAL_YEAR_ORDER = [
+    "2017-2018", "2018-2019", "2019-2020", "2020-2021",
+    "2021-2022", "2022-2023", "2023-2024", "2024-2025", "2025-2026"
+]
+
 # ----------------- LAKE DOY & TICK LOGIC (FROM YOUR SCRIPT) -----------------
 ANCHOR_MONTH = 8
 ANCHOR_DAY = 1
@@ -120,7 +126,8 @@ def lake_month_ticks(ref_year=2021):
 
 LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
 
-# Exact verified deployment boundaries from your raw instruments
+# Exact verified deployment boundaries:
+# 2025-2026 starts August 20, 2025 and cuts off on July 31, 2026 (clips August turnaround)
 DEPLOYMENT_BOUNDARIES = {
     ("2017-2018", "Surface"): ("2017-10-31", "2018-07-31"),
     ("2018-2019", "Surface"): ("2018-08-15", "2019-07-15"),
@@ -136,8 +143,8 @@ DEPLOYMENT_BOUNDARIES = {
     ("2023-2024", "Bottom"):  ("2023-10-04", "2024-07-31"),
     ("2024-2025", "Surface"): ("2024-09-01", "2025-04-12"),
     ("2024-2025", "Bottom"):  ("2024-09-01", "2025-04-12"),
-    ("2025-2026", "Surface"): ("2025-08-20", "2026-08-12"),
-    ("2025-2026", "Bottom"):  ("2025-08-20", "2026-08-12"),
+    ("2025-2026", "Surface"): ("2025-08-20", "2026-07-31"),
+    ("2025-2026", "Bottom"):  ("2025-08-20", "2026-07-31"),
 }
 
 @st.cache_data
@@ -146,11 +153,7 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # 1. CLIP 2025-2026 FROM AUG 1 TO AUG 20 ACROSS ALL PARAMETERS
-    clip_2025_mask = (df["deployment_cycle"] == "2025-2026") & (df["timestamp"] < pd.Timestamp("2025-08-20"))
-    df = df[~clip_2025_mask].copy()
-
-    # 2. ENFORCE EXACT VERIFIED START AND END DATES
+    # 1. Enforce exact verified start and end dates (removes deck & recovery turnaround days)
     masks = []
     for (cycle, pos), (start_s, end_s) in DEPLOYMENT_BOUNDARIES.items():
         m = (
@@ -164,11 +167,11 @@ def load_data():
     if masks:
         df = df[np.logical_or.reduce(masks)].copy()
 
-    # 3. TEMPERATURE CEILING (GOLDEN CODE DECK FILTER)
+    # 2. Temperature ceiling (golden code deck filter)
     if "temperature_c" in df.columns:
         df = df[df["temperature_c"] <= 16.5].copy()
 
-    # 4. CALCULATE GOLDEN LAKE_DOY
+    # 3. Calculate golden lake_doy
     df["lake_doy"] = df["timestamp"].map(lake_doy)
 
     return df
@@ -225,11 +228,11 @@ st.markdown(
 # Sidebar Observational Controls
 st.sidebar.header("🎛️ Observational Controls")
 
-available_cycles = sorted([c for c in df["deployment_cycle"].dropna().unique() if c != "2026-2027"])
+available_cycles = [c for c in CHRONOLOGICAL_YEAR_ORDER if c in df["deployment_cycle"].dropna().unique()]
 selected_cycles = st.sidebar.multiselect(
     "Deployment Cycles to Compare:",
     options=available_cycles,
-    default=available_cycles[-4:] if len(available_cycles) >= 4 else available_cycles
+    default=available_cycles
 )
 
 depth_filter = st.sidebar.radio(
@@ -554,7 +557,8 @@ else:
         st.subheader("2. Annual Cycle Decomposition (Dedicated Multi-Year Grid)")
         st.caption("Each deployment cycle displayed in its own dedicated card showing Surface and Bottom strata simultaneously.")
 
-        valid_cycles = [c for c in selected_cycles if c in df["deployment_cycle"].values]
+        # STRICT CHRONOLOGICAL ORDER: 2017-2018 first, 2025-2026 last
+        valid_cycles = [c for c in CHRONOLOGICAL_YEAR_ORDER if c in selected_cycles and c in df["deployment_cycle"].values]
 
         for i in range(0, len(valid_cycles), 2):
             cols = st.columns(2)
