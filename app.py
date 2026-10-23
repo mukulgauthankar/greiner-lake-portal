@@ -93,6 +93,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------- HIGH-RESOLUTION 600 DPI PLOT EXPORT CONFIG -----------------
+# Option A: Configures Plotly's camera download button to generate high-res images
+PLOT_EXPORT_CONFIG = {
+    "toImageButtonOptions": {
+        "format": "png",
+        "filename": "greiner_lake_observatory_figure",
+        "height": 900,
+        "width": 1800,
+        "scale": 4  # 4x supersampling produces ~7200x3600 px (600 DPI equivalent)
+    },
+    "displaylogo": False,
+    "modeBarButtonsToRemove": ["lasso2d", "select2d"]
+}
+
 # ----------------- CHRONOLOGICAL YEAR ORDER -----------------
 CHRONOLOGICAL_YEAR_ORDER = [
     "2017-2018", "2018-2019", "2019-2020", "2020-2021",
@@ -178,9 +192,10 @@ def load_data():
 
 df = load_data()
 
-# Helper to normalize logos onto a uniform bounding canvas
+# Enhanced High-Res Logo Handler:
+# Automatically trims transparent margins around logo artwork and fits it onto a sharp HD canvas
 @st.cache_data
-def get_standardized_logo(path_candidates, target_size=(500, 220)):
+def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
 
@@ -206,9 +221,20 @@ def get_standardized_logo(path_candidates, target_size=(500, 220)):
 
     try:
         im = Image.open(target_path).convert("RGBA")
-        im.thumbnail(target_size, Image.Resampling.LANCZOS)
-        canvas = Image.new("RGBA", target_size, (255, 255, 255, 0))
-        offset = ((target_size[0] - im.width) // 2, (target_size[1] - im.height) // 2)
+
+        # 1. Auto-crop transparent boundaries to normalize glyph size (fixes UQAC vs ULaval size difference)
+        bbox = im.getbbox()
+        if bbox:
+            im = im.crop(bbox)
+
+        # 2. Scale image within the target HD canvas
+        max_w = int(target_canvas[0] * pad_ratio)
+        max_h = int(target_canvas[1] * pad_ratio)
+        im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+        # 3. Center on high-res transparent canvas
+        canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
+        offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
         return canvas
     except Exception:
@@ -458,7 +484,7 @@ else:
         )
         fig_main.update_yaxes(showgrid=False)
         fig_main.update_layout(height=480, hovermode="x unified")
-        st.plotly_chart(fig_main, width="stretch")
+        st.plotly_chart(fig_main, width="stretch", config=PLOT_EXPORT_CONFIG)
 
         st.markdown("---")
         st.subheader(f"2. Side-by-Side Stratum Comparison: {param_choice[1]}")
@@ -492,7 +518,7 @@ else:
                 if y_range:
                     fig_surf.update_yaxes(range=y_range)
                 fig_surf.update_layout(height=420, showlegend=True, hovermode="x unified")
-                st.plotly_chart(fig_surf, width="stretch")
+                st.plotly_chart(fig_surf, width="stretch", config=PLOT_EXPORT_CONFIG)
             else:
                 st.info("No Surface records for the selected cycles.")
 
@@ -517,7 +543,7 @@ else:
                 if y_range:
                     fig_bot.update_yaxes(range=y_range)
                 fig_bot.update_layout(height=420, showlegend=True, hovermode="x unified")
-                st.plotly_chart(fig_bot, width="stretch")
+                st.plotly_chart(fig_bot, width="stretch", config=PLOT_EXPORT_CONFIG)
             else:
                 st.info("No Bottom records for the selected cycles.")
 
@@ -549,7 +575,7 @@ else:
             )
             fig_time.update_traces(connectgaps=False, line=dict(width=1.6))
             fig_time.update_layout(height=460, hovermode="x unified")
-            st.plotly_chart(fig_time, width="stretch")
+            st.plotly_chart(fig_time, width="stretch", config=PLOT_EXPORT_CONFIG)
         else:
             st.info("No records match the current filter selection.")
 
@@ -588,7 +614,7 @@ else:
                                 showlegend=True,
                                 hovermode="x unified"
                             )
-                            st.plotly_chart(fig_panel, width="stretch")
+                            st.plotly_chart(fig_panel, width="stretch", config=PLOT_EXPORT_CONFIG)
                         else:
                             st.info(f"No records available for {cycle_name}.")
 
@@ -685,6 +711,8 @@ with tab_team:
             else:
                 st.info(caption_label)
 
+    # Row 1: Academic & University Consortium (4 Equal Columns)
+    # Both UQAC and ULaval logos are auto-cropped to trim empty padding, matching visual height and crispness
     r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4)
     render_native_logo(
         r1_c1,
@@ -707,6 +735,7 @@ with tab_team:
         "GRIL (Limnology Research Group)"
     )
 
+    # Row 2: Polar Operations, Networks & FROST (3 Equal Columns)
     r2_c1, r2_c2, r2_c3 = st.columns(3)
     render_native_logo(
         r2_c1,
