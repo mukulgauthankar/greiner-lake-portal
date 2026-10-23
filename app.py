@@ -90,7 +90,6 @@ st.markdown("""
         background-color: #e2e8f0;
         border-color: #94a3b8;
     }
-    /* Center logos cleanly inside columns */
     [data-testid="stImage"] {
         display: flex;
         justify-content: center;
@@ -197,7 +196,7 @@ def load_data():
 df = load_data()
 
 # Smart Logo Loader:
-# Crops transparent AND white margins, then returns clean emblem for proportional sizing
+# Trims transparent and solid white margins, centering on an HD 1400x600 canvas
 @st.cache_data
 def get_standardized_logo(path_candidates):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -259,13 +258,7 @@ def get_standardized_logo(path_candidates):
             )
             im = im.crop(b_expanded)
 
-        # If nearly square or circular (aspect ratio between 0.75 and 1.35):
-        # Return the tightly-cropped graphic so it can be sized with badge_width directly
-        aspect = im.width / im.height
-        if 0.75 <= aspect <= 1.35:
-            return im
-
-        # For wide banners (UQAC, ULaval, GRIL, CEN, ArcticNet, Labo Patrimoine):
+        # Standardize onto an HD 1400x600 canvas
         target_canvas = (1400, 600)
         im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
@@ -273,7 +266,6 @@ def get_standardized_logo(path_candidates):
         canvas.paste(im, offset, im)
         return canvas
     except Exception:
-        # Fallback for formats not decoded by PIL (like raw AVIF)
         return target_path
 
 # Site Coordinates
@@ -739,7 +731,9 @@ with tab_team:
     st.subheader("Institutional Affiliations & Research Partners")
     st.caption("Collaborative universities, research groups, laboratories, and polar programs supporting the observatory:")
 
-    # Sizing logic: Circular/square badges are constrained to badge_width=185 to match UQAC height (~180px)
+    # Sizing router:
+    # Uses badge_width=185 for POLAR and FROST so their circular badges match UQAC height cleanly (~180px)
+    # Uses use_container_width=True for all horizontal banners (including UQAC, ULaval, AquaLab, Labo Patrimoine, GRIL, CEN, ArcticNet)
     def render_native_logo(col, candidate_paths, caption_label, badge_width=None):
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
@@ -752,6 +746,7 @@ with tab_team:
                 st.info(caption_label)
 
     # Row 1: Primary Academic Institutions & Laboratory Affiliations (3 Equal Columns)
+    # All three are horizontal banners rendered at full container width!
     r1_c1, r1_c2, r1_c3 = st.columns(3)
     render_native_logo(
         r1_c1,
@@ -763,12 +758,20 @@ with tab_team:
         ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
         "Université Laval (Co-Direction Partner)"
     )
-    # Rautio AquaLab badge is sized with badge_width=185 to balance with UQAC and ULaval
+    # AquaLab is a horizontal banner (720x461) - now matches UQAC and ULaval visual height!
     render_native_logo(
         r1_c3,
-        ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
-        "Rautio AquaLab (Limnology & Aquatic Ecology)",
-        badge_width=185
+        [
+            "assets/logos/Aqua Lab Logo.png",
+            "assets/logos/AquaLab Logo.png",
+            "assets/Aqua Lab Logo.png",
+            "assets/AquaLab Logo.png",
+            "Aqua Lab Logo.png",
+            "AquaLab Logo.png",
+            "assets/logos/aqualab.png",
+            "aqualab.png"
+        ],
+        "Rautio AquaLab (Limnology & Aquatic Ecology)"
     )
 
     # Row 2: Specialized Laboratories & Research Consortia (3 Equal Columns)
@@ -790,7 +793,7 @@ with tab_team:
     )
 
     # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
-    # Both POLAR and FROST are set to badge_width=185, matching UQAC height and preventing them from becoming giant circles!
+    # POLAR and FROST are circular badges sized at badge_width=185 to match UQAC visual height!
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
