@@ -195,9 +195,10 @@ def load_data():
 
 df = load_data()
 
-# Smart Logo Loader:
+# Your Best Uniform Logo Loader:
+# Applies uniform HD canvas scaling to ALL logos so every single partner logo shares identical visual height and weight.
 @st.cache_data
-def get_standardized_logo(path_candidates):
+def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
 
@@ -225,6 +226,7 @@ def get_standardized_logo(path_candidates):
     try:
         im = Image.open(target_path).convert("RGBA")
 
+        # Smart Autocrop: crop transparent AND solid white padding around logo
         alpha = im.split()[-1]
         bbox_alpha = alpha.getbbox()
 
@@ -257,12 +259,12 @@ def get_standardized_logo(path_candidates):
             )
             im = im.crop(b_expanded)
 
-        aspect = im.width / im.height
-        if 0.75 <= aspect <= 1.35:
-            return im
+        # Scale image within the target HD uniform canvas
+        max_w = int(target_canvas[0] * pad_ratio)
+        max_h = int(target_canvas[1] * pad_ratio)
+        im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
 
-        target_canvas = (1400, 600)
-        im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
+        # Center on high-res transparent canvas
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
         offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
@@ -799,7 +801,7 @@ with tab_team:
             else:
                 st.info(caption_label)
 
-    # Row 1: Primary Academic Institutions & Laboratory Affiliations (3 Equal Columns)
+    # Row 1: Academic & University Consortium (3 Equal Columns)
     r1_c1, r1_c2, r1_c3 = st.columns(3)
     render_native_logo(
         r1_c1,
@@ -813,16 +815,7 @@ with tab_team:
     )
     render_native_logo(
         r1_c3,
-        [
-            "assets/logos/Aqua Lab Logo.png",
-            "assets/logos/AquaLab Logo.png",
-            "assets/Aqua Lab Logo.png",
-            "assets/AquaLab Logo.png",
-            "Aqua Lab Logo.png",
-            "AquaLab Logo.png",
-            "assets/logos/aqualab.png",
-            "aqualab.png"
-        ],
+        ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
         "Rautio AquaLab (Limnology & Aquatic Ecology)"
     )
 
@@ -848,12 +841,7 @@ with tab_team:
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
-        [
-            "assets/logos/polar.png",
-            "assets/logos/polar.webp",
-            "polar.png",
-            "polar.webp"
-        ],
+        ["assets/logos/polar.png", "assets/logos/polar.webp", "polar.png", "polar.webp"],
         "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
