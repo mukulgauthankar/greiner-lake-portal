@@ -90,10 +90,14 @@ st.markdown("""
         background-color: #e2e8f0;
         border-color: #94a3b8;
     }
-    /* Center logos nicely in their columns */
-    .stImage > img {
-        margin-left: auto;
-        margin-right: auto;
+    /* Center logos cleanly inside columns */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    [data-testid="stImage"] > img {
+        margin: 0 auto;
         display: block;
     }
 </style>
@@ -193,9 +197,7 @@ def load_data():
 df = load_data()
 
 # Smart Logo Loader:
-# 1. Trims all surrounding transparent AND white borders automatically
-# 2. For circular/square emblems (POLAR, FROST, AquaLab), returns the clean square graphic directly so it renders at full badge diameter!
-# 3. For wide banners, places them on a standardized high-res banner canvas
+# Crops transparent AND white margins, then returns clean emblem for proportional sizing
 @st.cache_data
 def get_standardized_logo(path_candidates):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -257,14 +259,13 @@ def get_standardized_logo(path_candidates):
             )
             im = im.crop(b_expanded)
 
-        # Aspect ratio check:
-        # If it's a square/circular emblem (like POLAR, FROST, AquaLab):
-        # Return the tightly-cropped graphic directly so it matches the FROST circle size!
+        # If nearly square or circular (aspect ratio between 0.75 and 1.35):
+        # Return the tightly-cropped graphic so it can be sized with badge_width directly
         aspect = im.width / im.height
         if 0.75 <= aspect <= 1.35:
             return im
 
-        # For wide banners (UQAC, ULaval, GRIL, CEN, ArcticNet, etc.):
+        # For wide banners (UQAC, ULaval, GRIL, CEN, ArcticNet, Labo Patrimoine):
         target_canvas = (1400, 600)
         im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
@@ -618,6 +619,7 @@ else:
         st.subheader("2. Annual Cycle Decomposition (Dedicated Multi-Year Grid)")
         st.caption("Each deployment cycle displayed in its own dedicated card showing Surface and Bottom strata simultaneously.")
 
+        # STRICT CHRONOLOGICAL ORDER: 2017-2018 first, 2025-2026 last
         valid_cycles = [c for c in CHRONOLOGICAL_YEAR_ORDER if c in selected_cycles and c in df["deployment_cycle"].values]
 
         for i in range(0, len(valid_cycles), 2):
@@ -737,12 +739,15 @@ with tab_team:
     st.subheader("Institutional Affiliations & Research Partners")
     st.caption("Collaborative universities, research groups, laboratories, and polar programs supporting the observatory:")
 
-    def render_native_logo(col, candidate_paths, caption_label):
+    # Sizing logic: Circular/square badges are constrained to badge_width=185 to match UQAC height (~180px)
+    def render_native_logo(col, candidate_paths, caption_label, badge_width=None):
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
             if logo_obj is not None:
-                # If logo is an image or string, render cleanly centered
-                st.image(logo_obj, caption=caption_label, use_container_width=True)
+                if badge_width:
+                    st.image(logo_obj, caption=caption_label, width=badge_width)
+                else:
+                    st.image(logo_obj, caption=caption_label, use_container_width=True)
             else:
                 st.info(caption_label)
 
@@ -758,10 +763,12 @@ with tab_team:
         ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
         "Université Laval (Co-Direction Partner)"
     )
+    # Rautio AquaLab badge is sized with badge_width=185 to balance with UQAC and ULaval
     render_native_logo(
         r1_c3,
         ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
-        "Rautio AquaLab (Limnology & Aquatic Ecology)"
+        "Rautio AquaLab (Limnology & Aquatic Ecology)",
+        badge_width=185
     )
 
     # Row 2: Specialized Laboratories & Research Consortia (3 Equal Columns)
@@ -783,7 +790,7 @@ with tab_team:
     )
 
     # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
-    # Both POLAR and FROST render as standalone circular emblems filling their columns at the exact same size!
+    # Both POLAR and FROST are set to badge_width=185, matching UQAC height and preventing them from becoming giant circles!
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
@@ -793,7 +800,8 @@ with tab_team:
             "polar.png",
             "polar.webp"
         ],
-        "Polar Knowledge Canada (POLAR / CHARS)"
+        "Polar Knowledge Canada (POLAR / CHARS)",
+        badge_width=185
     )
     render_native_logo(
         r3_c2,
@@ -809,7 +817,8 @@ with tab_team:
             "FROST Logo Sami.avif",
             "FROST Logo Sami.png"
         ],
-        "FROST Research Program"
+        "FROST Research Program",
+        badge_width=185
     )
 
     st.markdown("---")
