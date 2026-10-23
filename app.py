@@ -196,7 +196,6 @@ def load_data():
 df = load_data()
 
 # Smart Logo Loader:
-# Trims transparent and solid white margins, centering on an HD 1400x600 canvas
 @st.cache_data
 def get_standardized_logo(path_candidates):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -226,7 +225,6 @@ def get_standardized_logo(path_candidates):
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # Smart Autocrop: crop transparent AND solid white padding around logo
         alpha = im.split()[-1]
         bbox_alpha = alpha.getbbox()
 
@@ -259,12 +257,10 @@ def get_standardized_logo(path_candidates):
             )
             im = im.crop(b_expanded)
 
-        # If nearly square or circular (aspect ratio between 0.75 and 1.35):
         aspect = im.width / im.height
         if 0.75 <= aspect <= 1.35:
             return im
 
-        # For wide banners:
         target_canvas = (1400, 600)
         im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
@@ -335,7 +331,7 @@ with tab_map:
 
         m = folium.Map(
             location=[GREINER_LAT, GREINER_LON],
-            zoom_start=9,
+            zoom_start=11,
             tiles=None
         )
 
@@ -363,6 +359,16 @@ with tab_map:
             control=True
         ).add_to(m)
 
+        # Optional Weather Radar overlay tile (OpenWeatherMap free public precipitation demo or similar weather raster)
+        folium.TileLayer(
+            tiles="https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=9def184a8c2d5885f471e442807f61c3",
+            attr="OpenWeatherMap",
+            name="🌦️ Live Weather / Radar Overlay",
+            overlay=True,
+            control=True,
+            opacity=0.6
+        ).add_to(m)
+
         folium.Marker(
             location=[GREINER_LAT, GREINER_LON],
             popup="<b>Greiner Lake Long-Term Mooring</b><br>69°10'37.44'' N, 104°55'53.15'' W<br>Surface & Benthic autonomous logging array",
@@ -379,9 +385,18 @@ with tab_map:
             fill_color="blue"
         ).add_to(m)
 
-        folium.LayerControl(position="topright", collapsed=True).add_to(m)
-        st_folium(m, height=460, width=None)
-        st.caption("📍 Red Pin: Greiner Lake Mooring (69°10'37.44'' N, 104°55'53.15'' W) | Blue Circle: Cambridge Bay Townsite")
+        folium.LayerControl(position="topright", collapsed=False).add_to(m)
+        st_folium(m, height=440, width=None)
+
+        # Direct Action Links for Ground-Level / Street View & Google Maps Inspection
+        st.markdown(
+            f'<div style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 10px;">'
+            f'<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={GREINER_LAT},{GREINER_LON}" target="_blank" class="lab-link-btn" style="flex:1; text-align:center;">🌍 Open in Google Maps / 3D View ↗</a>'
+            f'<a href="https://earth.google.com/web/@{GREINER_LAT},{GREINER_LON},35a,1000d,35y,0h,0t,0r" target="_blank" class="lab-link-btn" style="flex:1; text-align:center;">🛰️ Open Google Earth 3D ↗</a>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+        st.caption("📍 Red Pin: Greiner Lake Mooring | Use top-right layer control to toggle Satellite, Topo, OSM, and Live Weather Radar.")
 
         st.markdown("---")
         st.subheader("Lake Basin Bathymetry & Mooring Station")
@@ -736,8 +751,6 @@ with tab_team:
     st.subheader("Institutional Affiliations & Research Partners")
     st.caption("Collaborative universities, research groups, laboratories, and polar programs supporting the observatory:")
 
-    # Sizing router:
-    # Uses badge_width=280 for POLAR and FROST so their circular badges match AquaLab visual height (~140-160px)
     def render_native_logo(col, candidate_paths, caption_label, badge_width=None):
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
@@ -761,7 +774,6 @@ with tab_team:
         ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
         "Université Laval (Co-Direction Partner)"
     )
-    # Rautio AquaLab is a horizontal banner (720x461) - rendered at full container width to match UQAC and ULaval
     render_native_logo(
         r1_c3,
         [
@@ -796,7 +808,6 @@ with tab_team:
     )
 
     # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
-    # Both POLAR and FROST are set to badge_width=280 to match AquaLab's height and visual prominence perfectly!
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
@@ -807,7 +818,7 @@ with tab_team:
             "polar.webp"
         ],
         "Polar Knowledge Canada (POLAR / CHARS)",
-        badge_width=280
+        badge_width=185
     )
     render_native_logo(
         r3_c2,
@@ -824,7 +835,7 @@ with tab_team:
             "FROST Logo Sami.png"
         ],
         "FROST Research Program",
-        badge_width=280
+        badge_width=185
     )
 
     st.markdown("---")
@@ -844,6 +855,7 @@ with tab_team:
             cp,
             os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
         ]
         for tp in test_cp:
