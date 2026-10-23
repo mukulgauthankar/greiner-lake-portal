@@ -90,6 +90,11 @@ st.markdown("""
         background-color: #e2e8f0;
         border-color: #94a3b8;
     }
+    /* Balanced logo presentation */
+    .stImage > img {
+        margin-left: auto;
+        margin-right: auto;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -165,7 +170,6 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # 1. Enforce exact verified start and end dates (removes deck & recovery turnaround days)
     masks = []
     for (cycle, pos), (start_s, end_s) in DEPLOYMENT_BOUNDARIES.items():
         m = (
@@ -179,22 +183,19 @@ def load_data():
     if masks:
         df = df[np.logical_or.reduce(masks)].copy()
 
-    # 2. Temperature ceiling (golden code deck filter)
     if "temperature_c" in df.columns:
         df = df[df["temperature_c"] <= 16.5].copy()
 
-    # 3. Calculate golden lake_doy
     df["lake_doy"] = df["timestamp"].map(lake_doy)
-
     return df
 
 df = load_data()
 
-# Enhanced High-Res Logo Handler:
-# Smartly crops transparent AND white gutters around logo artwork, then centers it on an HD canvas.
-# This ensures UQAC matches ULaval and Polar Knowledge matches FROST in exact diameter and prominence.
+# Robust Logo Processor:
+# 1. Strips out both transparent AND white margins (fixes AquaLab and Polar being tiny)
+# 2. Fits on a 1200x550 canvas so circular and wide logos share equal visual weight
 @st.cache_data
-def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
+def get_standardized_logo(path_candidates, target_canvas=(1200, 550), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = None
 
@@ -244,19 +245,28 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
             bbox = bbox_alpha
 
         if bbox and (bbox[2] > bbox[0]) and (bbox[3] > bbox[1]):
-            im = im.crop(bbox)
+            pad = int(max(im.size) * 0.015)
+            w, h = im.size
+            b_expanded = (
+                max(0, bbox[0] - pad),
+                max(0, bbox[1] - pad),
+                min(w, bbox[2] + pad),
+                min(h, bbox[3] + pad)
+            )
+            im = im.crop(b_expanded)
 
-        # 2. Scale image within the target HD canvas
+        # 2. Scale image within the target canvas
         max_w = int(target_canvas[0] * pad_ratio)
         max_h = int(target_canvas[1] * pad_ratio)
         im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
 
-        # 3. Center on high-res transparent canvas
+        # 3. Center on transparent canvas
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
         offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
         return canvas
     except Exception:
+        # Fallback for unhandled image formats (like raw AVIF)
         return target_path
 
 # Site Coordinates
@@ -726,7 +736,11 @@ with tab_team:
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
             if logo_obj is not None:
-                st.image(logo_obj, caption=caption_label, use_container_width=True)
+                # If logo is a string (e.g. raw AVIF fallback), render with fixed width so it doesn't blow up
+                if isinstance(logo_obj, str):
+                    st.image(logo_obj, caption=caption_label, width=220)
+                else:
+                    st.image(logo_obj, caption=caption_label, use_container_width=True)
             else:
                 st.info(caption_label)
 
