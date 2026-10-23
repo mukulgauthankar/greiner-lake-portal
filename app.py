@@ -93,7 +93,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------- LAKE DOY & TICK LOGIC -----------------
+# ----------------- LAKE DOY & TICK LOGIC (FROM YOUR SCRIPT) -----------------
 ANCHOR_MONTH = 8
 ANCHOR_DAY = 1
 
@@ -120,17 +120,24 @@ def lake_month_ticks(ref_year=2021):
 
 LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
 
-# Exact Color Palette matching your figures
-GOLDEN_YEAR_COLORS = {
-    "2017-2018": "#1b9e77",
-    "2018-2019": "#d95f02",
-    "2019-2020": "#7570b3",
-    "2020-2021": "#e7298a",
-    "2021-2022": "#66a61e",
-    "2022-2023": "#e6ab02",
-    "2023-2024": "#a6761d",
-    "2024-2025": "#666666",
-    "2025-2026": "#17becf"
+# Exact verified deployment boundaries from your raw files
+DEPLOYMENT_BOUNDARIES = {
+    ("2017-2018", "Surface"): ("2017-10-31", "2018-07-31"),
+    ("2018-2019", "Surface"): ("2018-08-15", "2019-07-15"),
+    ("2019-2020", "Surface"): ("2019-08-11", "2020-07-31"),
+    ("2019-2020", "Bottom"):  ("2019-08-11", "2020-07-31"),
+    ("2020-2021", "Surface"): ("2020-09-23", "2021-07-31"),
+    ("2020-2021", "Bottom"):  ("2020-09-23", "2021-07-31"),
+    ("2021-2022", "Surface"): ("2021-08-27", "2022-07-31"),
+    ("2021-2022", "Bottom"):  ("2021-08-27", "2022-07-31"),
+    ("2022-2023", "Surface"): ("2022-08-17", "2023-07-31"),
+    ("2022-2023", "Bottom"):  ("2022-08-17", "2023-07-31"),
+    ("2023-2024", "Surface"): ("2023-10-04", "2024-07-31"),
+    ("2023-2024", "Bottom"):  ("2023-10-04", "2024-07-31"),
+    ("2024-2025", "Surface"): ("2024-09-01", "2025-04-12"),
+    ("2024-2025", "Bottom"):  ("2024-09-01", "2025-04-12"),
+    ("2025-2026", "Surface"): ("2025-08-20", "2026-08-12"),
+    ("2025-2026", "Bottom"):  ("2025-08-20", "2026-08-12"),
 }
 
 @st.cache_data
@@ -139,9 +146,26 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # Calculate lake_doy if not already stored
-    if "lake_doy" not in df.columns:
-        df["lake_doy"] = df["timestamp"].map(lake_doy)
+    # 1. Enforce exact verified start and end dates (removes pre-deployment test readings)
+    masks = []
+    for (cycle, pos), (start_s, end_s) in DEPLOYMENT_BOUNDARIES.items():
+        m = (
+            (df["deployment_cycle"] == cycle) &
+            (df["mooring_position"] == pos) &
+            (df["timestamp"] >= pd.Timestamp(start_s)) &
+            (df["timestamp"] <= pd.Timestamp(end_s))
+        )
+        masks.append(m)
+
+    if masks:
+        df = df[np.logical_or.reduce(masks)].copy()
+
+    # 2. Temperature Ceiling (golden code deck filter)
+    if "temperature_c" in df.columns:
+        df = df[df["temperature_c"] <= 16.5].copy()
+
+    # 3. Calculate golden lake_doy
+    df["lake_doy"] = df["timestamp"].map(lake_doy)
 
     return df
 
@@ -407,7 +431,7 @@ else:
             x="lake_doy",
             y=param_choice[0],
             color="deployment_cycle",
-            color_discrete_map=GOLDEN_YEAR_COLORS,
+            color_discrete_sequence=px.colors.qualitative.Plotly,
             line_dash="mooring_position" if depth_filter == "Both Layers" else None,
             labels={
                 "lake_doy": "Lake-year (Aug → Aug)",
@@ -451,7 +475,7 @@ else:
                     x="lake_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    color_discrete_map=GOLDEN_YEAR_COLORS,
+                    color_discrete_sequence=px.colors.qualitative.Plotly,
                     labels={"lake_doy": "Lake-year (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Year"},
                     template="plotly_white"
                 )
@@ -476,7 +500,7 @@ else:
                     x="lake_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    color_discrete_map=GOLDEN_YEAR_COLORS,
+                    color_discrete_sequence=px.colors.qualitative.Plotly,
                     labels={"lake_doy": "Lake-year (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Year"},
                     template="plotly_white"
                 )
