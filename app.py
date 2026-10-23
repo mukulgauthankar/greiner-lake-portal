@@ -196,7 +196,6 @@ def load_data():
 df = load_data()
 
 # Smart Logo Loader:
-# Trims transparent and solid white margins, centering on an HD 1400x600 canvas
 @st.cache_data
 def get_standardized_logo(path_candidates):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -226,7 +225,6 @@ def get_standardized_logo(path_candidates):
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # Smart Autocrop: crop transparent AND solid white padding around logo
         alpha = im.split()[-1]
         bbox_alpha = alpha.getbbox()
 
@@ -259,12 +257,10 @@ def get_standardized_logo(path_candidates):
             )
             im = im.crop(b_expanded)
 
-        # If nearly square or circular (aspect ratio between 0.75 and 1.35):
         aspect = im.width / im.height
         if 0.75 <= aspect <= 1.35:
             return im
 
-        # For wide banners:
         target_canvas = (1400, 600)
         im.thumbnail((int(target_canvas[0] * 0.90), int(target_canvas[1] * 0.88)), Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
@@ -411,6 +407,63 @@ with tab_map:
             )
         else:
             st.info("Bathymetry image not found. Ensure 'GRL BATHY  PNG.png' is in your Greiner folder.")
+
+        # --- COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
+        with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
+            st.markdown("#### 1. RBR maestro³ Multi-Channel Logger Architecture")
+            st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, PAR, CDOM).")
+
+            sensor_paths = [
+                "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                "rbr_sensor.png",
+                "rbr_maestro_exploded.png",
+                "C:/Users/mrgauthank/Downloads/ede28e9d-98ae-4aa9-93f5-0267526055bc.png"
+            ]
+            sensor_img = None
+            for sp in sensor_paths:
+                if os.path.exists(sp):
+                    try:
+                        sensor_img = Image.open(sp)
+                        break
+                    except Exception:
+                        continue
+
+            if sensor_img is not None:
+                st.image(
+                    sensor_img,
+                    caption="Figure: RBR maestro³ exploded view showing (1) End cap with connector, (2) Internal electronics/PCBA, (3) Main pressure case, (4) O-ring seal, (5) Bulkhead connector collar, (6) Sensor and electronics module, (7) Protective guard cage, and (8) Stainless steel securing screws.",
+                    use_container_width=True
+                )
+            else:
+                st.info("Sensor exploded diagram image not found. Ensure 'ede28e9d-98ae-4aa9-93f5-0267526055bc.png' is in your Greiner folder.")
+
+            st.markdown("---")
+            st.markdown("#### 2. Dual-Depth Sub-Surface Mooring Rig Setup")
+            st.markdown("Architectural layout of the autonomous mooring array deployed in Greiner Lake, positioning instruments at the **Surface layer (~3 m)** and **Benthic layer (~7 m)** anchored securely to the basin floor.")
+
+            mooring_paths = [
+                "Mooring setup.png",
+                "mooring_setup.png",
+                "mooring_rig.png",
+                "C:/Users/mrgauthank/Downloads/Mooring setup.png"
+            ]
+            mooring_img = None
+            for mp in mooring_paths:
+                if os.path.exists(mp):
+                    try:
+                        mooring_img = Image.open(mp)
+                        break
+                    except Exception:
+                        continue
+
+            if mooring_img is not None:
+                st.image(
+                    mooring_img,
+                    caption="Figure: Sub-surface mooring rig architecture detailing the surface instrument sub-array (~3 m) and benthic instrument sub-array (~7 m) with acoustic/sub-surface buoyancy floats and deadweight anchor.",
+                    use_container_width=True
+                )
+            else:
+                st.info("Mooring setup diagram image not found. Ensure 'Mooring setup.png' is in your Greiner folder.")
 
     with col_chars:
         st.subheader("Environmental & Limnological Profile")
@@ -736,16 +789,11 @@ with tab_team:
     st.subheader("Institutional Affiliations & Research Partners")
     st.caption("Collaborative universities, research groups, laboratories, and polar programs supporting the observatory:")
 
-    # Sizing router:
-    # Uses badge_width=280 for POLAR and FROST so their circular badges match AquaLab visual height (~140-160px)
-    def render_native_logo(col, candidate_paths, caption_label, badge_width=None):
+    def render_native_logo(col, candidate_paths, caption_label):
         with col:
             logo_obj = get_standardized_logo(candidate_paths)
             if logo_obj is not None:
-                if badge_width:
-                    st.image(logo_obj, caption=caption_label, width=badge_width)
-                else:
-                    st.image(logo_obj, caption=caption_label, use_container_width=True)
+                st.image(logo_obj, caption=caption_label, use_container_width=True)
             else:
                 st.info(caption_label)
 
@@ -761,7 +809,6 @@ with tab_team:
         ["assets/logos/logo-ulaval.png", "assets/logos/ulaval.png", "logo-ulaval.png"],
         "Université Laval (Co-Direction Partner)"
     )
-    # Rautio AquaLab is a horizontal banner (720x461) - rendered at full container width to match UQAC and ULaval
     render_native_logo(
         r1_c3,
         [
@@ -796,7 +843,6 @@ with tab_team:
     )
 
     # Row 3: Polar Operations, Networks & FROST (3 Equal Columns)
-    # Both POLAR and FROST are set to badge_width=280 to match AquaLab's height and visual prominence perfectly!
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
@@ -806,8 +852,7 @@ with tab_team:
             "polar.png",
             "polar.webp"
         ],
-        "Polar Knowledge Canada (POLAR / CHARS)",
-        badge_width=280
+        "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
         r3_c2,
@@ -823,8 +868,7 @@ with tab_team:
             "FROST Logo Sami.avif",
             "FROST Logo Sami.png"
         ],
-        "FROST Research Program",
-        badge_width=280
+        "FROST Research Program"
     )
 
     st.markdown("---")
@@ -844,6 +888,7 @@ with tab_team:
             cp,
             os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
         ]
         for tp in test_cp:
