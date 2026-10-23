@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import folium
 from streamlit_folium import st_folium
 import os
@@ -100,17 +99,21 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # Calculate hydrological DOY based on deployment cycle start year
-    # Allows a full Aug -> Aug window (~396 days) so retrieval/redeployment dates are never clipped
-    def calc_hydro_doy(row):
-        cycle = str(row["deployment_cycle"])
+    # STRICT LINEAR TIMELINE (NO LOOPING):
+    # Day 1 is always August 1 of the cycle's starting calendar year.
+    # The end of the cycle in the following July/August stays at Day 330-396.
+    # It NEVER loops back to Day 1-31.
+    def calc_linear_cycle_day(row):
+        cycle_str = str(row["deployment_cycle"]).strip()
         try:
-            start_year = int(cycle.split("-")[0])
+            start_year = int(cycle_str.split("-")[0])
         except Exception:
             start_year = row["timestamp"].year if row["timestamp"].month >= 8 else row["timestamp"].year - 1
-        return (row["timestamp"] - pd.Timestamp(year=start_year, month=8, day=1)).days + 1
 
-    df["hydro_doy"] = df.apply(calc_hydro_doy, axis=1)
+        base_date = pd.Timestamp(year=start_year, month=8, day=1)
+        return (row["timestamp"] - base_date).days + 1
+
+    df["cycle_day"] = df.apply(calc_linear_cycle_day, axis=1)
     return df
 
 df = load_data()
@@ -190,7 +193,7 @@ param_choice = st.sidebar.selectbox(
     format_func=lambda x: x[1]
 )
 
-# Full 13-month calendar scale: August 1 of deployment year through August 31 of recovery year
+# 13-month continuous scale: Day 1 (Aug 1) -> Day 396 (Late August of following year)
 month_ticks = [1, 32, 62, 93, 123, 154, 185, 213, 244, 274, 305, 335, 366]
 month_labels = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug (+1)"]
 
@@ -370,36 +373,39 @@ if not selected_cycles:
     with tab_time:
         st.info("👈 Please select one or more deployment cycles from the sidebar to visualize time series.")
 else:
-    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE (Aug -> Aug) -----------------
+    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE (STRICT CHRONOLOGY) -----------------
     with tab_doy:
         st.subheader(f"1. Integrated Interannual View: {param_choice[1]}")
-        st.caption("Aligned from August 1 through late August of the following year. Preserves true deployment and recovery endpoints.")
+        st.caption("Each deployment cycle is plotted in strict chronological order from its actual start to its actual recovery date. No looping or artificial bridging.")
 
+        # Sort strictly by timestamp within each cycle and position to prevent looping
         df_main_plot = df_filtered.sort_values(
-            by=["deployment_cycle", "mooring_position", "hydro_doy"]
+            by=["deployment_cycle", "mooring_position", "timestamp"]
         ).copy()
 
+        # Connect gaps = False ensures that if a cycle only starts in October, NO line is drawn before October!
         fig_main = px.line(
             df_main_plot,
-            x="hydro_doy",
+            x="cycle_day",
             y=param_choice[0],
             color="deployment_cycle",
             line_dash="mooring_position" if depth_filter == "Both Layers" else None,
             labels={
-                "hydro_doy": "Annual Cycle Timeline (August 1 → August 31 of Following Year)",
+                "cycle_day": "Hydrological Timeline (Aug 1 Year N → Aug 31 Year N+1)",
                 param_choice[0]: param_choice[1],
                 "deployment_cycle": "Deployment",
                 "mooring_position": "Depth Layer"
             },
             template="plotly_white"
         )
+        fig_main.update_traces(connectgaps=False)
         fig_main.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
         fig_main.update_layout(height=480, hovermode="x unified")
         st.plotly_chart(fig_main, width="stretch")
 
         st.markdown("---")
         st.subheader(f"2. Side-by-Side Stratum Comparison: {param_choice[1]}")
-        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the exact same 13-month annual scale.")
+        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the 13-month timeline.")
 
         col_surf, col_bot = st.columns(2)
 
@@ -411,17 +417,18 @@ else:
         with col_surf:
             st.markdown("#### 🌊 Surface Mooring (~2.5–3.5 m)")
             df_surf = df_cycles[df_cycles["mooring_position"] == "Surface"].sort_values(
-                by=["deployment_cycle", "hydro_doy"]
+                by=["deployment_cycle", "timestamp"]
             )
             if not df_surf.empty:
                 fig_surf = px.line(
                     df_surf,
-                    x="hydro_doy",
+                    x="cycle_day",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"hydro_doy": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    labels={"cycle_day": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
                     template="plotly_white"
                 )
+                fig_surf.update_traces(connectgaps=False)
                 fig_surf.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
                 if y_range:
                     fig_surf.update_yaxes(range=y_range)
@@ -433,17 +440,18 @@ else:
         with col_bot:
             st.markdown("#### ⚓ Bottom (Benthic) Mooring (~7.5–9.2 m)")
             df_bot = df_cycles[df_cycles["mooring_position"] == "Bottom"].sort_values(
-                by=["deployment_cycle", "hydro_doy"]
+                by=["deployment_cycle", "timestamp"]
             )
             if not df_bot.empty:
                 fig_bot = px.line(
                     df_bot,
-                    x="hydro_doy",
+                    x="cycle_day",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"hydro_doy": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    labels={"cycle_day": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
                     template="plotly_white"
                 )
+                fig_bot.update_traces(connectgaps=False)
                 fig_bot.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
                 if y_range:
                     fig_bot.update_yaxes(range=y_range)
@@ -457,7 +465,6 @@ else:
         st.subheader(f"1. Continuous Multi-Year Series: {param_choice[1]}")
         st.caption("Gap-aware time series. Data gaps between deployment recovery and relaunch are kept broken (no false straight-line interpolation).")
 
-        # Reindex against full calendar to ensure gaps break cleanly without straight diagonal lines
         clean_series_list = []
         for pos in ["Surface", "Bottom"]:
             df_pos = df_filtered[df_filtered["mooring_position"] == pos].sort_values("timestamp")
@@ -489,7 +496,6 @@ else:
         st.subheader("2. Annual Cycle Decomposition (Dedicated Multi-Year Grid)")
         st.caption("Each deployment cycle displayed in its own dedicated card showing Surface and Bottom strata simultaneously.")
 
-        # Display each deployment year as its own individual panel in a 2-column grid
         valid_cycles = [c for c in selected_cycles if c in df["deployment_cycle"].values]
 
         for i in range(0, len(valid_cycles), 2):
@@ -557,6 +563,7 @@ with tab_team:
                     unsafe_allow_html=True
                 )
 
+            # Button element or height placeholder
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
             else:
