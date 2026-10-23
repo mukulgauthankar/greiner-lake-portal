@@ -408,7 +408,7 @@ with tab_map:
         else:
             st.info("Bathymetry image not found. Ensure 'GRL BATHY  PNG.png' is in your Greiner folder.")
 
-        # --- COLLAPSIBLE EXPANDER CHECKING ROOT DIRECTORY FIRST ---
+        # --- COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
         with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
             st.markdown("#### 1. RBR maestro³ Multi-Channel Logger Architecture")
             st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, PAR, CDOM).")
@@ -813,7 +813,16 @@ with tab_team:
     )
     render_native_logo(
         r1_c3,
-        ["assets/logos/AquaLab Logo.png", "assets/AquaLab Logo.png", "AquaLab Logo.png"],
+        [
+            "assets/logos/Aqua Lab Logo.png",
+            "assets/logos/AquaLab Logo.png",
+            "assets/Aqua Lab Logo.png",
+            "assets/AquaLab Logo.png",
+            "Aqua Lab Logo.png",
+            "AquaLab Logo.png",
+            "assets/logos/aqualab.png",
+            "aqualab.png"
+        ],
         "Rautio AquaLab (Limnology & Aquatic Ecology)"
     )
 
@@ -839,7 +848,12 @@ with tab_team:
     r3_c1, r3_c2, r3_c3 = st.columns(3)
     render_native_logo(
         r3_c1,
-        ["assets/logos/polar.png", "polar.png"],
+        [
+            "assets/logos/polar.png",
+            "assets/logos/polar.webp",
+            "polar.png",
+            "polar.webp"
+        ],
         "Polar Knowledge Canada (POLAR / CHARS)"
     )
     render_native_logo(
