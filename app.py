@@ -207,28 +207,57 @@ with tab_map:
     with col_map:
         st.subheader("Station Location & Regional Setting")
 
-        # Initialize map with tiles=None so custom layers use clean human-readable names
+        # Base map initialization (tiles=None allows clean custom names in the LayerControl)
         m = folium.Map(
             location=[GREINER_LAT, GREINER_LON],
             zoom_start=9,
             tiles=None
         )
 
-        # Layer 1: Esri Satellite Imagery
+        # --- BASE LAYERS (Mutually Exclusive Radio Buttons) ---
+        # 1. Esri Satellite Imagery (Default)
         folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             attr="Esri World Imagery",
-            name="Satellite Imagery",
+            name="🛰️ Satellite Imagery",
             overlay=False,
             control=True
         ).add_to(m)
 
-        # Layer 2: OpenStreetMap (Street & Topographic view)
+        # 2. Esri Topographic / Watershed Relief
+        folium.TileLayer(
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri Topographic, USGS",
+            name="🏔️ Topographic / Watershed",
+            overlay=False,
+            control=True
+        ).add_to(m)
+
+        # 3. OpenStreetMap (Street / Settlement)
         folium.TileLayer(
             tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             attr="&copy; OpenStreetMap contributors",
-            name="OpenStreetMap (Street/Topo)",
+            name="🗺️ OpenStreetMap (Town & Roads)",
             overlay=False,
+            control=True
+        ).add_to(m)
+
+        # 4. Esri Oceans / Coastal Relief
+        folium.TileLayer(
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri, GEBCO, NOAA",
+            name="🌊 Ocean & Coastal Basemap",
+            overlay=False,
+            control=True
+        ).add_to(m)
+
+        # --- OVERLAY LAYERS (Toggleable Checkboxes) ---
+        # 5. OpenSeaMap (Marine Navigation & Coastal Markers)
+        folium.TileLayer(
+            tiles="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+            attr="&copy; OpenSeaMap contributors",
+            name="⚓ Marine Navigation (OpenSeaMap)",
+            overlay=True,
             control=True
         ).add_to(m)
 
@@ -249,8 +278,8 @@ with tab_map:
             fill_color="blue"
         ).add_to(m)
 
-        # Add clean Layer Switcher (displays 'Satellite Imagery' and 'OpenStreetMap', no raw URLs!)
-        folium.LayerControl(position="topright", collapsed=False).add_to(m)
+        # Clean Layer Switcher (collapsed=True keeps the map view uncluttered until hovered/clicked)
+        folium.LayerControl(position="topright", collapsed=True).add_to(m)
 
         st_folium(m, height=460, width=None)
         st.caption("📍 Red Pin: Greiner Lake Mooring (69°10'37.44'' N, 104°55'53.15'' W) | Blue Circle: Cambridge Bay Townsite")
