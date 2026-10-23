@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import folium
 from streamlit_folium import st_folium
 import os
@@ -99,11 +100,17 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    if "hydro_doy" not in df.columns:
-        def calc_hydro_doy(dt):
-            cycle_start_year = dt.year if dt.month >= 8 else dt.year - 1
-            return (dt - pd.Timestamp(year=cycle_start_year, month=8, day=1)).days + 1
-        df["hydro_doy"] = df["timestamp"].apply(calc_hydro_doy)
+    # Calculate hydrological DOY based on deployment cycle start year
+    # Allows a full Aug -> Aug window (~396 days) so retrieval/redeployment dates are never clipped
+    def calc_hydro_doy(row):
+        cycle = str(row["deployment_cycle"])
+        try:
+            start_year = int(cycle.split("-")[0])
+        except Exception:
+            start_year = row["timestamp"].year if row["timestamp"].month >= 8 else row["timestamp"].year - 1
+        return (row["timestamp"] - pd.Timestamp(year=start_year, month=8, day=1)).days + 1
+
+    df["hydro_doy"] = df.apply(calc_hydro_doy, axis=1)
     return df
 
 df = load_data()
@@ -166,7 +173,7 @@ selected_cycles = st.sidebar.multiselect(
 )
 
 depth_filter = st.sidebar.radio(
-    "Mooring Layer (for Main Overview):",
+    "Mooring Layer (for Overview Plots):",
     options=["Both Layers", "Surface", "Bottom"]
 )
 
@@ -183,8 +190,9 @@ param_choice = st.sidebar.selectbox(
     format_func=lambda x: x[1]
 )
 
-month_ticks = [1, 32, 62, 93, 123, 154, 185, 213, 244, 274, 305, 335]
-month_labels = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+# Full 13-month calendar scale: August 1 of deployment year through August 31 of recovery year
+month_ticks = [1, 32, 62, 93, 123, 154, 185, 213, 244, 274, 305, 335, 366]
+month_labels = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug (+1)"]
 
 # Filter Data for Selected Cycles
 df_cycles = df[df["deployment_cycle"].isin(selected_cycles)].copy() if selected_cycles else pd.DataFrame()
@@ -195,8 +203,8 @@ if not df_filtered.empty and depth_filter != "Both Layers":
 # ----------------- PRIMARY NAVIGATION TABS (4 Clean Tabs) -----------------
 tab_map, tab_doy, tab_time, tab_team = st.tabs([
     "🗺️ Geographic Setting & Lake Framework",
-    "❄️ Annual Limnological Cycle (Aug → Jul)",
-    "📈 Continuous Multi-Year Series",
+    "❄️ Annual Limnological Cycle (Aug → Aug)",
+    "📈 Continuous Multi-Year Series & Annual Panels",
     "👥 Research Team & Institutional Partners"
 ])
 
@@ -207,15 +215,13 @@ with tab_map:
     with col_map:
         st.subheader("Station Location & Regional Setting")
 
-        # Base map initialization (tiles=None allows clean custom names in the LayerControl)
         m = folium.Map(
             location=[GREINER_LAT, GREINER_LON],
             zoom_start=9,
             tiles=None
         )
 
-        # --- BASE LAYERS (3 Clean, Reliable Keyless Basemaps) ---
-        # 1. Esri Satellite Imagery (Default)
+        # 1. Esri Satellite Imagery
         folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             attr="Esri World Imagery",
@@ -233,7 +239,7 @@ with tab_map:
             control=True
         ).add_to(m)
 
-        # 3. OpenStreetMap (Town & Roads)
+        # 3. OpenStreetMap
         folium.TileLayer(
             tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             attr="&copy; OpenStreetMap contributors",
@@ -259,9 +265,7 @@ with tab_map:
             fill_color="blue"
         ).add_to(m)
 
-        # Clean Layer Switcher (collapsed=True keeps map clean until hovered/clicked)
         folium.LayerControl(position="topright", collapsed=True).add_to(m)
-
         st_folium(m, height=460, width=None)
         st.caption("📍 Red Pin: Greiner Lake Mooring (69°10'37.44'' N, 104°55'53.15'' W) | Blue Circle: Cambridge Bay Townsite")
 
@@ -366,10 +370,10 @@ if not selected_cycles:
     with tab_time:
         st.info("👈 Please select one or more deployment cycles from the sidebar to visualize time series.")
 else:
-    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE -----------------
+    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE (Aug -> Aug) -----------------
     with tab_doy:
         st.subheader(f"1. Integrated Interannual View: {param_choice[1]}")
-        st.caption("All selected cycles aligned from August 1 through July 31 across the full ice season.")
+        st.caption("Aligned from August 1 through late August of the following year. Preserves true deployment and recovery endpoints.")
 
         df_main_plot = df_filtered.sort_values(
             by=["deployment_cycle", "mooring_position", "hydro_doy"]
@@ -382,20 +386,20 @@ else:
             color="deployment_cycle",
             line_dash="mooring_position" if depth_filter == "Both Layers" else None,
             labels={
-                "hydro_doy": "Month of Limnological Cycle (Starting August)",
+                "hydro_doy": "Annual Cycle Timeline (August 1 → August 31 of Following Year)",
                 param_choice[0]: param_choice[1],
                 "deployment_cycle": "Deployment",
                 "mooring_position": "Depth Layer"
             },
             template="plotly_white"
         )
-        fig_main.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 365])
+        fig_main.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
         fig_main.update_layout(height=480, hovermode="x unified")
         st.plotly_chart(fig_main, width="stretch")
 
         st.markdown("---")
         st.subheader(f"2. Side-by-Side Stratum Comparison: {param_choice[1]}")
-        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the exact same annual timeline.")
+        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the exact same 13-month annual scale.")
 
         col_surf, col_bot = st.columns(2)
 
@@ -415,10 +419,10 @@ else:
                     x="hydro_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"hydro_doy": "Month", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    labels={"hydro_doy": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
                     template="plotly_white"
                 )
-                fig_surf.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 365])
+                fig_surf.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
                 if y_range:
                     fig_surf.update_yaxes(range=y_range)
                 fig_surf.update_layout(height=420, showlegend=True, hovermode="x unified")
@@ -437,10 +441,10 @@ else:
                     x="hydro_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"hydro_doy": "Month", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    labels={"hydro_doy": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
                     template="plotly_white"
                 )
-                fig_bot.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 365])
+                fig_bot.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
                 if y_range:
                     fig_bot.update_yaxes(range=y_range)
                 fig_bot.update_layout(height=420, showlegend=True, hovermode="x unified")
@@ -448,19 +452,77 @@ else:
             else:
                 st.info("No Bottom records for the selected cycles.")
 
-    # ----------------- TAB 3: CONTINUOUS TIME SERIES -----------------
+    # ----------------- TAB 3: CONTINUOUS TIME SERIES & ANNUAL PANELS -----------------
     with tab_time:
-        st.subheader(f"Continuous Multi-Year Record ({param_choice[1]})")
-        fig_time = px.line(
-            df_filtered,
-            x="timestamp",
-            y=param_choice[0],
-            color="mooring_position",
-            labels={"timestamp": "Date", param_choice[0]: param_choice[1], "mooring_position": "Depth Layer"},
-            template="plotly_white"
-        )
-        fig_time.update_layout(height=480, hovermode="x unified")
-        st.plotly_chart(fig_time, width="stretch")
+        st.subheader(f"1. Continuous Multi-Year Series: {param_choice[1]}")
+        st.caption("Gap-aware time series. Data gaps between deployment recovery and relaunch are kept broken (no false straight-line interpolation).")
+
+        # Reindex against full calendar to ensure gaps break cleanly without straight diagonal lines
+        clean_series_list = []
+        for pos in ["Surface", "Bottom"]:
+            df_pos = df_filtered[df_filtered["mooring_position"] == pos].sort_values("timestamp")
+            if not df_pos.empty:
+                full_dates = pd.date_range(df_pos["timestamp"].min(), df_pos["timestamp"].max(), freq="D")
+                df_reindexed = df_pos.set_index("timestamp").reindex(full_dates)
+                df_reindexed["mooring_position"] = pos
+                df_reindexed = df_reindexed.reset_index().rename(columns={"index": "timestamp"})
+                clean_series_list.append(df_reindexed)
+
+        if clean_series_list:
+            df_clean_cont = pd.concat(clean_series_list, ignore_index=True)
+            fig_time = px.line(
+                df_clean_cont,
+                x="timestamp",
+                y=param_choice[0],
+                color="mooring_position",
+                color_discrete_map={"Surface": "#2b83ba", "Bottom": "#d7191c"},
+                labels={"timestamp": "Observation Date", param_choice[0]: param_choice[1], "mooring_position": "Depth Stratum"},
+                template="plotly_white"
+            )
+            fig_time.update_traces(connectgaps=False)
+            fig_time.update_layout(height=460, hovermode="x unified")
+            st.plotly_chart(fig_time, width="stretch")
+        else:
+            st.info("No records match the current filter selection.")
+
+        st.markdown("---")
+        st.subheader("2. Annual Cycle Decomposition (Dedicated Multi-Year Grid)")
+        st.caption("Each deployment cycle displayed in its own dedicated card showing Surface and Bottom strata simultaneously.")
+
+        # Display each deployment year as its own individual panel in a 2-column grid
+        valid_cycles = [c for c in selected_cycles if c in df["deployment_cycle"].values]
+
+        for i in range(0, len(valid_cycles), 2):
+            cols = st.columns(2)
+            for j in range(2):
+                idx = i + j
+                if idx < len(valid_cycles):
+                    cycle_name = valid_cycles[idx]
+                    df_year = df[df["deployment_cycle"] == cycle_name].sort_values("timestamp")
+
+                    with cols[j]:
+                        st.markdown(f"#### 📅 Cycle: {cycle_name}")
+
+                        if not df_year.empty:
+                            fig_panel = px.line(
+                                df_year,
+                                x="timestamp",
+                                y=param_choice[0],
+                                color="mooring_position",
+                                color_discrete_map={"Surface": "#2b83ba", "Bottom": "#d7191c"},
+                                labels={"timestamp": "Date", param_choice[0]: param_choice[1], "mooring_position": "Stratum"},
+                                template="plotly_white"
+                            )
+                            fig_panel.update_traces(connectgaps=False)
+                            fig_panel.update_layout(
+                                height=300,
+                                margin=dict(l=20, r=20, t=30, b=20),
+                                showlegend=True,
+                                hovermode="x unified"
+                            )
+                            st.plotly_chart(fig_panel, width="stretch")
+                        else:
+                            st.info(f"No records available for {cycle_name}.")
 
 # ----------------- TAB 4: RESEARCH TEAM & INSTITUTIONAL PARTNERS -----------------
 with tab_team:
@@ -495,7 +557,6 @@ with tab_team:
                     unsafe_allow_html=True
                 )
 
-            # Button element or height placeholder
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
             else:
