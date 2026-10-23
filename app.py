@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import folium
 from streamlit_folium import st_folium
 import os
+import calendar
 from PIL import Image
 
 st.set_page_config(
@@ -60,7 +61,6 @@ st.markdown("""
         border-bottom: 1px solid #e2e8f0;
         color: #334155;
     }
-    /* Exactly Equal Profile Cards */
     .profile-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -93,32 +93,61 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------- LAKE DOY & TICK LOGIC -----------------
+ANCHOR_MONTH = 8
+ANCHOR_DAY = 1
+
+def lake_doy(dt):
+    if pd.isna(dt):
+        return float("nan")
+    anchor = pd.Timestamp(year=dt.year, month=ANCHOR_MONTH, day=ANCHOR_DAY)
+    if dt < anchor:
+        anchor = pd.Timestamp(year=dt.year - 1, month=ANCHOR_MONTH, day=ANCHOR_DAY)
+    delta = dt - anchor
+    return delta.days + delta.seconds / 86400.0
+
+def lake_month_ticks(ref_year=2021):
+    ticks, labels = [], []
+    months = list(range(ANCHOR_MONTH, 13)) + list(range(1, ANCHOR_MONTH))
+    years = [ref_year] * len(range(ANCHOR_MONTH, 13)) + [ref_year + 1] * len(range(1, ANCHOR_MONTH))
+    for m, y in zip(months, years):
+        dt0 = pd.Timestamp(y, m, 1)
+        ticks.append(lake_doy(dt0))
+        labels.append(calendar.month_abbr[m])
+    ticks.append(lake_doy(pd.Timestamp(ref_year + 1, ANCHOR_MONTH, 1)))
+    labels.append("Aug")
+    return ticks, labels
+
+LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
+
+# Exact Color Palette matching your figures
+GOLDEN_YEAR_COLORS = {
+    "2017-2018": "#1b9e77",
+    "2018-2019": "#d95f02",
+    "2019-2020": "#7570b3",
+    "2020-2021": "#e7298a",
+    "2021-2022": "#66a61e",
+    "2022-2023": "#e6ab02",
+    "2023-2024": "#a6761d",
+    "2024-2025": "#666666",
+    "2025-2026": "#17becf"
+}
+
 @st.cache_data
 def load_data():
     df = pd.read_csv("greiner_lake_daily_summary.csv")
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # STRICT LINEAR TIMELINE (NO LOOPING):
-    # Day 1 is always August 1 of the cycle's starting calendar year.
-    # The end of the cycle in the following July/August stays at Day 330-396.
-    # It NEVER loops back to Day 1-31.
-    def calc_linear_cycle_day(row):
-        cycle_str = str(row["deployment_cycle"]).strip()
-        try:
-            start_year = int(cycle_str.split("-")[0])
-        except Exception:
-            start_year = row["timestamp"].year if row["timestamp"].month >= 8 else row["timestamp"].year - 1
+    # Calculate lake_doy if not already stored
+    if "lake_doy" not in df.columns:
+        df["lake_doy"] = df["timestamp"].map(lake_doy)
 
-        base_date = pd.Timestamp(year=start_year, month=8, day=1)
-        return (row["timestamp"] - base_date).days + 1
-
-    df["cycle_day"] = df.apply(calc_linear_cycle_day, axis=1)
     return df
 
 df = load_data()
 
-# Helper to normalize logos onto a uniform bounding canvas while preserving native st.image enlarge
+# Helper to normalize logos onto a uniform bounding canvas
 @st.cache_data
 def get_standardized_logo(path_candidates, target_size=(500, 220)):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -183,19 +212,14 @@ depth_filter = st.sidebar.radio(
 param_choice = st.sidebar.selectbox(
     "Parameter:",
     options=[
-        ("do_mg_l", "Dissolved Oxygen (mg/L)"),
-        ("do_sat_pct", "Dissolved Oxygen Saturation (%)"),
-        ("temperature_c", "Water Temperature (°C)"),
-        ("spec_cond_us_cm", "Specific Conductivity (µS/cm)"),
-        ("par_umol_m2_s", "PAR (µmol/m²/s)"),
-        ("depth_m", "Sensor Depth (m)")
+        ("temperature_c", "Temperature (°C)"),
+        ("do_mg_l", "Dissolved O₂ concentration (mg/L)"),
+        ("do_sat_pct", "Dissolved O₂ saturation (%)"),
+        ("spec_cond_us_cm", "Specific conductivity (µS/cm)"),
+        ("par_umol_m2_s", "PAR (µmol photons m⁻² s⁻¹)")
     ],
     format_func=lambda x: x[1]
 )
-
-# 13-month continuous scale: Day 1 (Aug 1) -> Day 396 (Late August of following year)
-month_ticks = [1, 32, 62, 93, 123, 154, 185, 213, 244, 274, 305, 335, 366]
-month_labels = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug (+1)"]
 
 # Filter Data for Selected Cycles
 df_cycles = df[df["deployment_cycle"].isin(selected_cycles)].copy() if selected_cycles else pd.DataFrame()
@@ -224,7 +248,6 @@ with tab_map:
             tiles=None
         )
 
-        # 1. Esri Satellite Imagery
         folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             attr="Esri World Imagery",
@@ -233,7 +256,6 @@ with tab_map:
             control=True
         ).add_to(m)
 
-        # 2. Esri Topographic / Watershed Relief
         folium.TileLayer(
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
             attr="Esri Topographic, USGS",
@@ -242,7 +264,6 @@ with tab_map:
             control=True
         ).add_to(m)
 
-        # 3. OpenStreetMap
         folium.TileLayer(
             tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             attr="&copy; OpenStreetMap contributors",
@@ -251,7 +272,6 @@ with tab_map:
             control=True
         ).add_to(m)
 
-        # Markers
         folium.Marker(
             location=[GREINER_LAT, GREINER_LON],
             popup="<b>Greiner Lake Long-Term Mooring</b><br>69°10'37.44'' N, 104°55'53.15'' W<br>Surface & Benthic autonomous logging array",
@@ -373,39 +393,45 @@ if not selected_cycles:
     with tab_time:
         st.info("👈 Please select one or more deployment cycles from the sidebar to visualize time series.")
 else:
-    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE (STRICT CHRONOLOGY) -----------------
+    # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE (LAKE-YEAR AUG -> AUG) -----------------
     with tab_doy:
         st.subheader(f"1. Integrated Interannual View: {param_choice[1]}")
-        st.caption("Each deployment cycle is plotted in strict chronological order from its actual start to its actual recovery date. No looping or artificial bridging.")
+        st.caption("Lake-year timeline (Aug 1 → Aug 1). Curves start at actual deployment dates and stop at true retrieval without looping.")
 
-        # Sort strictly by timestamp within each cycle and position to prevent looping
         df_main_plot = df_filtered.sort_values(
-            by=["deployment_cycle", "mooring_position", "timestamp"]
+            by=["deployment_cycle", "mooring_position", "lake_doy"]
         ).copy()
 
-        # Connect gaps = False ensures that if a cycle only starts in October, NO line is drawn before October!
         fig_main = px.line(
             df_main_plot,
-            x="cycle_day",
+            x="lake_doy",
             y=param_choice[0],
             color="deployment_cycle",
+            color_discrete_map=GOLDEN_YEAR_COLORS,
             line_dash="mooring_position" if depth_filter == "Both Layers" else None,
             labels={
-                "cycle_day": "Hydrological Timeline (Aug 1 Year N → Aug 31 Year N+1)",
+                "lake_doy": "Lake-year (Aug → Aug)",
                 param_choice[0]: param_choice[1],
-                "deployment_cycle": "Deployment",
-                "mooring_position": "Depth Layer"
+                "deployment_cycle": "Year",
+                "mooring_position": "Layer"
             },
             template="plotly_white"
         )
-        fig_main.update_traces(connectgaps=False)
-        fig_main.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
+        fig_main.update_traces(connectgaps=False, line=dict(width=1.8))
+        fig_main.update_xaxes(
+            tickmode="array",
+            tickvals=LAKE_TICKS,
+            ticktext=LAKE_TICK_LABELS,
+            range=[0, 366],
+            showgrid=False
+        )
+        fig_main.update_yaxes(showgrid=False)
         fig_main.update_layout(height=480, hovermode="x unified")
         st.plotly_chart(fig_main, width="stretch")
 
         st.markdown("---")
         st.subheader(f"2. Side-by-Side Stratum Comparison: {param_choice[1]}")
-        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the 13-month timeline.")
+        st.caption("Direct comparison of Surface vs. Bottom (Benthic) layers across the identical Lake-year scale.")
 
         col_surf, col_bot = st.columns(2)
 
@@ -417,19 +443,21 @@ else:
         with col_surf:
             st.markdown("#### 🌊 Surface Mooring (~2.5–3.5 m)")
             df_surf = df_cycles[df_cycles["mooring_position"] == "Surface"].sort_values(
-                by=["deployment_cycle", "timestamp"]
+                by=["deployment_cycle", "lake_doy"]
             )
             if not df_surf.empty:
                 fig_surf = px.line(
                     df_surf,
-                    x="cycle_day",
+                    x="lake_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"cycle_day": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    color_discrete_map=GOLDEN_YEAR_COLORS,
+                    labels={"lake_doy": "Lake-year (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Year"},
                     template="plotly_white"
                 )
-                fig_surf.update_traces(connectgaps=False)
-                fig_surf.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
+                fig_surf.update_traces(connectgaps=False, line=dict(width=1.8))
+                fig_surf.update_xaxes(tickmode="array", tickvals=LAKE_TICKS, ticktext=LAKE_TICK_LABELS, range=[0, 366], showgrid=False)
+                fig_surf.update_yaxes(showgrid=False)
                 if y_range:
                     fig_surf.update_yaxes(range=y_range)
                 fig_surf.update_layout(height=420, showlegend=True, hovermode="x unified")
@@ -440,19 +468,21 @@ else:
         with col_bot:
             st.markdown("#### ⚓ Bottom (Benthic) Mooring (~7.5–9.2 m)")
             df_bot = df_cycles[df_cycles["mooring_position"] == "Bottom"].sort_values(
-                by=["deployment_cycle", "timestamp"]
+                by=["deployment_cycle", "lake_doy"]
             )
             if not df_bot.empty:
                 fig_bot = px.line(
                     df_bot,
-                    x="cycle_day",
+                    x="lake_doy",
                     y=param_choice[0],
                     color="deployment_cycle",
-                    labels={"cycle_day": "Timeline (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Cycle"},
+                    color_discrete_map=GOLDEN_YEAR_COLORS,
+                    labels={"lake_doy": "Lake-year (Aug → Aug)", param_choice[0]: param_choice[1], "deployment_cycle": "Year"},
                     template="plotly_white"
                 )
-                fig_bot.update_traces(connectgaps=False)
-                fig_bot.update_xaxes(tickmode="array", tickvals=month_ticks, ticktext=month_labels, range=[1, 396])
+                fig_bot.update_traces(connectgaps=False, line=dict(width=1.8))
+                fig_bot.update_xaxes(tickmode="array", tickvals=LAKE_TICKS, ticktext=LAKE_TICK_LABELS, range=[0, 366], showgrid=False)
+                fig_bot.update_yaxes(showgrid=False)
                 if y_range:
                     fig_bot.update_yaxes(range=y_range)
                 fig_bot.update_layout(height=420, showlegend=True, hovermode="x unified")
@@ -486,7 +516,7 @@ else:
                 labels={"timestamp": "Observation Date", param_choice[0]: param_choice[1], "mooring_position": "Depth Stratum"},
                 template="plotly_white"
             )
-            fig_time.update_traces(connectgaps=False)
+            fig_time.update_traces(connectgaps=False, line=dict(width=1.6))
             fig_time.update_layout(height=460, hovermode="x unified")
             st.plotly_chart(fig_time, width="stretch")
         else:
@@ -519,7 +549,7 @@ else:
                                 labels={"timestamp": "Date", param_choice[0]: param_choice[1], "mooring_position": "Stratum"},
                                 template="plotly_white"
                             )
-                            fig_panel.update_traces(connectgaps=False)
+                            fig_panel.update_traces(connectgaps=False, line=dict(width=1.6))
                             fig_panel.update_layout(
                                 height=300,
                                 margin=dict(l=20, r=20, t=30, b=20),
@@ -553,7 +583,6 @@ with tab_team:
                     except Exception:
                         continue
 
-            # Avatar or Photo
             if photo_found is not None:
                 st.image(photo_found, use_container_width=True)
             else:
@@ -563,7 +592,6 @@ with tab_team:
                     unsafe_allow_html=True
                 )
 
-            # Button element or height placeholder
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
             else:
@@ -625,7 +653,6 @@ with tab_team:
             else:
                 st.info(caption_label)
 
-    # Row 1: Academic & University Consortium (4 Equal Columns)
     r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4)
     render_native_logo(
         r1_c1,
@@ -648,7 +675,6 @@ with tab_team:
         "GRIL (Limnology Research Group)"
     )
 
-    # Row 2: Polar Operations, Networks & FROST (3 Equal Columns)
     r2_c1, r2_c2, r2_c3 = st.columns(3)
     render_native_logo(
         r2_c1,
