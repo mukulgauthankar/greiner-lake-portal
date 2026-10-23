@@ -15,25 +15,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling for Academic Factsheets, Equal-Height Profile Cards & Balanced Logo Ribbon
+# Custom Styling
 st.markdown("""
 <style>
     .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
-    div[data-testid="metric-container"] {
-        background-color: #f8f9fa;
-        border: 1px solid #e2e8f0;
-        padding: 12px 18px;
-        border-radius: 8px;
-    }
-    div[data-testid="metric-container"] label {
-        font-size: 13.5px !important;
-        font-weight: 600;
-        color: #475569;
-    }
-    div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
-        font-size: 23px !important;
-        color: #0f172a;
-    }
     .framework-card {
         background-color: #fcfcfd;
         border: 1px solid #e2e8f0;
@@ -207,56 +192,11 @@ df_filtered = df_cycles.copy()
 if not df_filtered.empty and depth_filter != "Both Layers":
     df_filtered = df_filtered[df_filtered["mooring_position"] == depth_filter]
 
-# Submerged records (depth > 1.5 m)
-df_submerged = df_filtered[df_filtered["depth_m"] > 1.5] if not df_filtered.empty else pd.DataFrame()
-
-# ----------------- 1. TOP BENCHMARK RIBBON -----------------
-with st.expander("📊 Limnological Diagnostics & Multi-Year Extremes", expanded=True):
-    if df_submerged.empty:
-        st.info("👈 Select one or more deployment cycles from the sidebar to view diagnostics.")
-    else:
-        c1, c2, c3, c4 = st.columns(4)
-
-        # 1. Dissolved Oxygen Range
-        min_do = df_submerged["do_mg_l"].min()
-        max_do = df_submerged["do_mg_l"].max()
-        c1.metric(
-            "DO Extremes",
-            f"{min_do:.2f} – {max_do:.2f} mg/L" if pd.notnull(min_do) else "N/A",
-            help="Dissolved Oxygen range (mg/L). Captures seasonal minimum drawdown and spring hyper-oxygenation."
-        )
-
-        # 2. Water Temperature Range
-        min_temp = df_submerged["temperature_c"].min()
-        max_temp = df_submerged["temperature_c"].max()
-        c2.metric(
-            "Water Temp Range",
-            f"{min_temp:.1f} – {max_temp:.1f} °C" if pd.notnull(min_temp) else "N/A",
-            help="True submerged water temperature range (°C; depth > 1.5 m), strictly excluding deck handling."
-        )
-
-        # 3. Peak Submerged PAR
-        max_par = df_submerged["par_umol_m2_s"].max()
-        c3.metric(
-            "Peak PAR",
-            f"{max_par:.1f} µmol/m²/s" if pd.notnull(max_par) else "N/A",
-            help="Maximum submerged Photosynthetically Active Radiation recorded during open-water summer / early melt."
-        )
-
-        # 4. Total Observations
-        total_days = df_filtered["timestamp"].nunique()
-        c4.metric(
-            "Days Logged",
-            f"{total_days:,} Days",
-            help="Total continuous daily summary observations analyzed for selected cycles."
-        )
-
-# ----------------- 2. PRIMARY NAVIGATION TABS -----------------
-tab_map, tab_doy, tab_time, tab_strat, tab_team = st.tabs([
+# ----------------- PRIMARY NAVIGATION TABS (4 Clean Tabs) -----------------
+tab_map, tab_doy, tab_time, tab_team = st.tabs([
     "🗺️ Geographic Setting & Lake Framework",
     "❄️ Annual Limnological Cycle (Aug → Jul)",
     "📈 Continuous Multi-Year Series",
-    "🔬 Vertical Stratification (Surface − Bottom)",
     "👥 Research Team & Institutional Partners"
 ])
 
@@ -267,20 +207,13 @@ with tab_map:
     with col_map:
         st.subheader("Station Location & Regional Setting")
 
-        # Free, Keyless Basemaps: Esri Satellite by default + OpenStreetMap
+        # Clean Satellite Basemap (No layer control box or URL artifacts)
         m = folium.Map(
             location=[GREINER_LAT, GREINER_LON],
             zoom_start=9,
             tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            attr="Esri World Imagery",
-            name="Satellite Imagery"
+            attr="Esri World Imagery"
         )
-        folium.TileLayer(
-            tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            attr="&copy; OpenStreetMap contributors",
-            name="OpenStreetMap (Street/Topo)",
-            overlay=False
-        ).add_to(m)
         folium.Marker(
             location=[GREINER_LAT, GREINER_LON],
             popup="<b>Greiner Lake Long-Term Mooring</b><br>69°10'37.44'' N, 104°55'53.15'' W<br>Surface & Benthic autonomous logging array",
@@ -295,7 +228,6 @@ with tab_map:
             fill=True,
             fill_color="blue"
         ).add_to(m)
-        folium.LayerControl().add_to(m)
         st_folium(m, height=460, width=None)
         st.caption("📍 Red Pin: Greiner Lake Mooring (69°10'37.44'' N, 104°55'53.15'' W) | Blue Circle: Cambridge Bay Townsite")
 
@@ -399,8 +331,6 @@ if not selected_cycles:
         st.info("👈 Please select one or more deployment cycles from the sidebar to visualize time series.")
     with tab_time:
         st.info("👈 Please select one or more deployment cycles from the sidebar to visualize time series.")
-    with tab_strat:
-        st.info("👈 Please select one or more deployment cycles from the sidebar to calculate vertical stratification.")
 else:
     # ----------------- TAB 2: ANNUAL LIMNOLOGICAL CYCLE -----------------
     with tab_doy:
@@ -498,53 +428,7 @@ else:
         fig_time.update_layout(height=480, hovermode="x unified")
         st.plotly_chart(fig_time, width="stretch")
 
-    # ----------------- TAB 4: STRATIFICATION ANALYSIS -----------------
-    with tab_strat:
-        st.subheader("Vertical Stratification Gradients (Surface − Bottom)")
-
-        df_pivot = df[df["deployment_cycle"].isin(selected_cycles)].pivot_table(
-            index=["timestamp", "deployment_cycle", "hydro_doy"],
-            columns="mooring_position",
-            values=["temperature_c", "do_mg_l"]
-        ).dropna()
-
-        if not df_pivot.empty and ("Surface" in df_pivot["temperature_c"] and "Bottom" in df_pivot["temperature_c"]):
-            df_pivot["delta_temp"] = df_pivot["temperature_c"]["Surface"] - df_pivot["temperature_c"]["Bottom"]
-            df_pivot["delta_do"] = df_pivot["do_mg_l"]["Surface"] - df_pivot["do_mg_l"]["Bottom"]
-
-            df_diff = df_pivot.reset_index()
-            df_diff.columns = [
-                col[0] if col[1] == "" else f"{col[0]}_{col[1]}"
-                for col in df_diff.columns
-            ]
-
-            fig_diff = px.area(
-                df_diff,
-                x="timestamp",
-                y="delta_temp",
-                title="Thermal Stratification: Surface Temp − Bottom Temp (°C)",
-                labels={"timestamp": "Date", "delta_temp": "Δ Temperature (°C)"},
-                template="plotly_white",
-                color_discrete_sequence=["#2b83ba"]
-            )
-            fig_diff.add_hline(y=0, line_color="black", line_width=1)
-            st.plotly_chart(fig_diff, width="stretch")
-
-            fig_diff_do = px.area(
-                df_diff,
-                x="timestamp",
-                y="delta_do",
-                title="Oxygen Stratification: Surface DO − Bottom DO (mg/L)",
-                labels={"timestamp": "Date", "delta_do": "Δ Dissolved Oxygen (mg/L)"},
-                template="plotly_white",
-                color_discrete_sequence=["#2ca25f"]
-            )
-            fig_diff_do.add_hline(y=0, line_color="black", line_width=1)
-            st.plotly_chart(fig_diff_do, width="stretch")
-        else:
-            st.info("Stratification calculations require overlapping Surface and Bottom records for the selected years.")
-
-# ----------------- TAB 5: RESEARCH TEAM & INSTITUTIONAL PARTNERS -----------------
+# ----------------- TAB 4: RESEARCH TEAM & INSTITUTIONAL PARTNERS -----------------
 with tab_team:
     st.subheader("Scientific Research Team")
     st.caption("Autonomous mooring operations, sensor harmonization, and High-Arctic limnological research.")
@@ -583,7 +467,6 @@ with tab_team:
             else:
                 btn_element = '<div style="height:32px;"></div>'
 
-            # Formatted card string without leading spaces to prevent Markdown code block triggers
             card_html = (
                 '<div class="profile-card" style="margin-top: 10px;">'
                 '<div>'
@@ -734,15 +617,3 @@ with tab_team:
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-# Data Export Section
-st.markdown("---")
-st.subheader("📥 Export Filtered Limnological Records")
-if not df_filtered.empty:
-    csv_data = df_filtered.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="Download Selected Dataset (CSV)",
-        data=csv_data,
-        file_name="greiner_lake_filtered_data.csv",
-        mime="text/csv"
-    )
