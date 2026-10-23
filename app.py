@@ -759,7 +759,7 @@ with tab_team:
         "FROST Research Program"
     )
 
-st.markdown("---")
+    st.markdown("---")
     st.markdown("#### 🏛️ Canadian High Arctic Research Station (CHARS Campus)")
 
     chars_paths = [
