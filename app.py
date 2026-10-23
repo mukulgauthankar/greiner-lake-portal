@@ -120,7 +120,7 @@ def lake_month_ticks(ref_year=2021):
 
 LAKE_TICKS, LAKE_TICK_LABELS = lake_month_ticks()
 
-# Exact verified deployment boundaries from your raw files
+# Exact verified deployment boundaries from your raw instruments
 DEPLOYMENT_BOUNDARIES = {
     ("2017-2018", "Surface"): ("2017-10-31", "2018-07-31"),
     ("2018-2019", "Surface"): ("2018-08-15", "2019-07-15"),
@@ -146,7 +146,11 @@ def load_data():
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["deployment_cycle"] = df["deployment_cycle"].replace({"2026-2027": "2025-2026"})
 
-    # 1. Enforce exact verified start and end dates (removes pre-deployment test readings)
+    # 1. CLIP 2025-2026 FROM AUG 1 TO AUG 20 ACROSS ALL PARAMETERS
+    clip_2025_mask = (df["deployment_cycle"] == "2025-2026") & (df["timestamp"] < pd.Timestamp("2025-08-20"))
+    df = df[~clip_2025_mask].copy()
+
+    # 2. ENFORCE EXACT VERIFIED START AND END DATES
     masks = []
     for (cycle, pos), (start_s, end_s) in DEPLOYMENT_BOUNDARIES.items():
         m = (
@@ -160,11 +164,11 @@ def load_data():
     if masks:
         df = df[np.logical_or.reduce(masks)].copy()
 
-    # 2. Temperature Ceiling (golden code deck filter)
+    # 3. TEMPERATURE CEILING (GOLDEN CODE DECK FILTER)
     if "temperature_c" in df.columns:
         df = df[df["temperature_c"] <= 16.5].copy()
 
-    # 3. Calculate golden lake_doy
+    # 4. CALCULATE GOLDEN LAKE_DOY
     df["lake_doy"] = df["timestamp"].map(lake_doy)
 
     return df
