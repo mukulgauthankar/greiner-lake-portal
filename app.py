@@ -70,15 +70,15 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 410px;
+        height: 480px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
     }
     .team-avatar-img {
-        width: 130px;
-        height: 130px;
+        width: 210px;
+        height: 210px;
         border-radius: 50%;
         object-fit: cover;
         margin: 0 auto 12px auto;
@@ -110,6 +110,8 @@ st.markdown("""
     [data-testid="stImage"] > img {
         margin: 0 auto;
         display: block;
+        max-height: 400px;
+        object-fit: contain;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -795,7 +797,7 @@ with tab_team:
                 avatar_html = f'<img src="{avatar_b64}" class="team-avatar-img" alt="{name}">'
             else:
                 initials = get_initials(name)
-                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:130px; height:130px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
+                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:210px; height:210px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
 
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
