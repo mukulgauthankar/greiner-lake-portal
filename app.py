@@ -70,7 +70,7 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 600px;
+        height: 640px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
