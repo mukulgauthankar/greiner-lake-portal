@@ -830,7 +830,7 @@ with tab_team:
         "Université du Québec à Chicoutimi (UQAC)", 
         "Groupe de recherche interuniversitaire en limnologie (GRIL)",
         "Centre d'études nordiques (CEN)",
-        "Ph.D. Student Leads autonomous mooring time-series processing, investigating year-round limnological dynamics, microbial food web succession, and trophic transfer efficiency in High-Arctic lake systems. Specializes in winter limnology and under-ice biogeochemistry,combining continuous autonomous time-series analysis and oxygen mass balance modeling with microbial and aquatic food web observations to establish foundational data on high-latitude lake ecosystems ",
+        "Ph.D. Student Leads autonomous mooring time-series processing, investigating year-round limnological dynamics, microbial food web succession, and trophic transfer efficiency in High-Arctic lake systems. Specializes in winter limnology and under-ice biogeochemistry,combining continuous autonomous time-series analysis and oxygen mass balance modeling with microbial and aquatic food web observations to establish foundational data on high-latitude lake ecosystems",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
         zoom=0.78, top_offset=0.41, left_offset=0.40
     )
