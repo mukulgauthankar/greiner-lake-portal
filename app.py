@@ -223,9 +223,8 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
             os.path.join(base_dir, "assets", "team", fname),
             os.path.join(base_dir, "assets", "logos", fname),
             os.path.join(base_dir, "assets", "logos", fname.replace(" ", "")),
-            os.path.join(base_dir, "assets", fname),
-            os.path.join(base_dir, "logos", fname),
-            os.path.join(base_dir, fname)
+            os.path.join(base_dir, "assets", "team", fname.replace(" ", "%20")),
+            os.path.join(base_dir, "assets", fname)
         ]
         for tp in test_paths:
             if os.path.exists(tp):
@@ -822,7 +821,7 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Mukund adjusted with zoom=0.78 and top_offset=0.17 for perfect centering and balanced framing
+    # Mukund adjusted with zoom=0.78 and top_offset=0.32 to move face up into the exact center
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
@@ -830,7 +829,7 @@ with tab_team:
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
-        zoom=0.78, top_offset=0.17
+        zoom=0.78, top_offset=0.32
     )
 
     display_member(
