@@ -7,7 +7,9 @@ import folium
 from streamlit_folium import st_folium
 import os
 import calendar
-from PIL import Image, ImageChops
+import base64
+from io import BytesIO
+from PIL import Image, ImageChops, ImageDraw
 
 st.set_page_config(
     page_title="Greiner Lake Limnological Portal",
@@ -68,11 +70,21 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 390px;
+        height: 410px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
+    }
+    .team-avatar-img {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 12px auto;
+        display: block;
+        border: 3px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .lab-link-btn {
         display: inline-block;
@@ -723,25 +735,66 @@ with tab_team:
         parts = clean.split()
         return f"{parts[0][0]}{parts[-1][0]}".upper()
 
+    def get_circular_avatar_base64(img_paths, size=300):
+        target_path = None
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        for p in img_paths:
+            fname = os.path.basename(p)
+            test_paths = [
+                p,
+                os.path.join(base_dir, p),
+                os.path.join(base_dir, "assets", "team", fname),
+                os.path.join(base_dir, "assets", "logos", fname),
+                os.path.join(base_dir, "assets", fname)
+            ]
+            for tp in test_paths:
+                if os.path.exists(tp):
+                    target_path = tp
+                    break
+            if target_path:
+                break
+
+        if not target_path:
+            return None
+
+        try:
+            im = Image.open(target_path).convert("RGBA")
+            w, h = im.size
+
+            # Smart square center crop
+            min_side = min(w, h)
+            left = (w - min_side) // 2
+            top = (h - min_side) // 2
+            right = left + min_side
+            bottom = top + min_side
+            im_square = im.crop((left, top, right, bottom))
+            im_square = im_square.resize((size, size), Image.Resampling.LANCZOS)
+
+            # Circular mask
+            mask = Image.new("L", (size, size), 0)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0, size, size), fill=255)
+
+            output = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            output.paste(im_square, (0, 0), mask)
+
+            buffered = BytesIO()
+            output.save(buffered, format="PNG")
+            encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            return f"data:image/png;base64,{encoded}"
+        except Exception:
+            return None
+
     def display_member(col, name, role, inst, bio, img_keys, link_url=None, link_label="Visit Lab Website ↗"):
         with col:
-            photo_found = None
-            for ik in img_keys:
-                if os.path.exists(ik):
-                    try:
-                        photo_found = Image.open(ik)
-                        break
-                    except Exception:
-                        continue
+            avatar_b64 = get_circular_avatar_base64(img_keys)
 
-            if photo_found is not None:
-                st.image(photo_found, use_container_width=True)
+            if avatar_b64:
+                avatar_html = f'<img src="{avatar_b64}" class="team-avatar-img" alt="{name}">'
             else:
                 initials = get_initials(name)
-                st.markdown(
-                    f'<div style="background-color:#e2e8f0; border-radius:50%; width:100px; height:100px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>',
-                    unsafe_allow_html=True
-                )
+                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:130px; height:130px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
 
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
@@ -749,19 +802,19 @@ with tab_team:
                 btn_element = '<div style="height:32px;"></div>'
 
             card_html = (
-                '<div class="profile-card" style="margin-top: 10px;">'
+                '<div class="profile-card">'
                 '<div>'
+                f'{avatar_html}'
                 f'<div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">{name}</div>'
                 f'<div style="font-size: 14px; font-weight: 600; color: #0284c7; margin-bottom: 4px;">{role}</div>'
                 f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst}</div>'
                 '</div>'
-                f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: left; border-top: 1px solid #f1f5f9; padding-top: 10px; flex-grow: 1;">{bio}</div>'
+                f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: left; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
                 f'<div style="margin-top: 10px;">{btn_element}</div>'
                 '</div>'
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Team members with exact .avif and .jpg filename mapping
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
