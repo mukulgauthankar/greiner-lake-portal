@@ -223,7 +223,7 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
             os.path.join(base_dir, "assets", "team", fname),
             os.path.join(base_dir, "assets", "logos", fname),
             os.path.join(base_dir, "assets", "logos", fname.replace(" ", "")),
-            os.path.join(base_dir, "assets", "fname"),
+            os.path.join(base_dir, "assets", fname),
             os.path.join(base_dir, "logos", fname),
             os.path.join(base_dir, fname)
         ]
@@ -768,9 +768,7 @@ with tab_team:
             min_side = min(w, h)
             crop_size = int(min_side * zoom)
 
-            # Horizontal (left/right) control using left_offset
             left = max(0, min(w - crop_size, int((w - crop_size) * left_offset)))
-            # Vertical (up/down) control using top_offset
             top = max(0, min(h - crop_size, int((h - crop_size) * top_offset)))
 
             right = left + crop_size
@@ -793,7 +791,7 @@ with tab_team:
         except Exception:
             return None
 
-    def display_member(col, name, role, inst, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
+    def display_member(col, name, role, inst1, inst2, inst3, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
         with col:
             avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset, left_offset=left_offset)
 
@@ -814,7 +812,9 @@ with tab_team:
                 f'{avatar_html}'
                 f'<div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">{name}</div>'
                 f'<div style="font-size: 14px; font-weight: 600; color: #0284c7; margin-bottom: 4px;">{role}</div>'
-                f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst}</div>'
+                f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst1}</div>'
+                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst2}</div>'
+                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst3}</div>'
                 '</div>'
                 f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: left; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
                 f'<div style="margin-top: 10px;">{btn_element}</div>'
@@ -822,15 +822,15 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Mukund adjusted with left_offset=0.40 (shifts photo right) and top_offset=0.20 (centers vertically)
+    # Mukund adjusted with top_offset=0.22 and left_offset=0.45 for perfect dead-center framing
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
         "Lead Researcher & Ph.D. Candidate",
-        "Université du Québec à Chicoutimi (UQAC)", 
+        "Université du Québec à Chicoutimi (UQAC)",
         "Groupe de recherche interuniversitaire en limnologie (GRIL)",
         "Centre d'études nordiques (CEN)",
-        "Ph.D. Student Leads autonomous mooring time-series processing, investigating year-round limnological dynamics, microbial food web succession, and trophic transfer efficiency in High-Arctic lake systems. Specializes in winter limnology and under-ice biogeochemistry,combining continuous autonomous time-series analysis and oxygen mass balance modeling with microbial and aquatic food web observations to establish foundational data on high-latitude lake ecosystems",
+        "Investigates year-round limnological dynamics, microbial food web succession, and trophic transfer efficiency in High-Arctic lake systems. Specializes in winter limnology and under-ice biogeochemistry—combining continuous autonomous time-series analysis and oxygen mass balance modeling with microbial and aquatic food web observations to establish foundational data on high-latitude lake ecosystems.",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
         zoom=0.78, top_offset=0.41, left_offset=0.40
     )
@@ -839,9 +839,9 @@ with tab_team:
         col_t2,
         "Prof. Milla Rautio",
         "Principal Investigator & Supervisor",
-        "Université du Québec à Chicoutimi (UQAC)",
-        "Groupe de recherche interuniversitaire en limnologie (GRIL)",
-        "Centre d'études nordiques (CEN)",
+        "UQAC",
+        "GRIL / CEN",
+        "Canada Research Chair",
         "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
         ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
         zoom=0.75, top_offset=0.28, left_offset=0.5,
@@ -853,7 +853,9 @@ with tab_team:
         col_t3,
         "Prof. Catherine Girard",
         "Co-Supervisor & Co-Direction",
-        "Université Laval / GRIL / Institut nordique du Québec",
+        "Université Laval",
+        "GRIL",
+        "Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
         ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/cethylene.jpg"],
         zoom=0.88, top_offset=0.22, left_offset=0.5,
