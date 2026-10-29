@@ -816,7 +816,7 @@ with tab_team:
                 f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst2}</div>'
                 f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst3}</div>'
                 '</div>'
-                f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: left; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
+                f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: justify; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
                 f'<div style="margin-top: 10px;">{btn_element}</div>'
                 '</div>'
             )
