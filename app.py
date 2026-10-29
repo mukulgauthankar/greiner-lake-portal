@@ -70,15 +70,15 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 480px;
+        height: 520px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
     }
     .team-avatar-img {
-        width: 210px;
-        height: 210px;
+        width: 250px;
+        height: 250px;
         border-radius: 50%;
         object-fit: cover;
         margin: 0 auto 12px auto;
@@ -540,7 +540,7 @@ with tab_map:
                         continue
 
             if mooring_img is not None:
-                # Explicit height constraint applied so it balances the left image perfectly
+                # Balanced height constraint matching the left exploded view
                 st.image(
                     mooring_img,
                     caption="Figure: Sub-surface mooring array architecture.",
@@ -736,7 +736,7 @@ with tab_team:
         parts = clean.split()
         return f"{parts[0][0]}{parts[-1][0]}".upper()
 
-    def get_circular_avatar_base64(img_paths, size=300):
+    def get_circular_avatar_base64(img_paths, size=300, zoom=0.75, top_offset=0.30):
         target_path = None
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -765,11 +765,10 @@ with tab_team:
             im = Image.open(target_path).convert("RGBA")
             w, h = im.size
 
-            # Tighter face zoom crop (70% of min side, shifted slightly up to center on faces)
             min_side = min(w, h)
-            crop_size = int(min_side * 0.70)
+            crop_size = int(min_side * zoom)
             left = (w - crop_size) // 2
-            top = max(0, int((h - crop_size) * 0.30))
+            top = max(0, int((h - crop_size) * top_offset))
             right = left + crop_size
             bottom = top + crop_size
 
@@ -794,15 +793,15 @@ with tab_team:
         except Exception:
             return None
 
-    def display_member(col, name, role, inst, bio, img_keys, link_url=None, link_label="Visit Lab Website ↗"):
+    def display_member(col, name, role, inst, bio, img_keys, zoom=0.75, top_offset=0.30, link_url=None, link_label="Visit Lab Website ↗"):
         with col:
-            avatar_b64 = get_circular_avatar_base64(img_keys)
+            avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset)
 
             if avatar_b64:
                 avatar_html = f'<img src="{avatar_b64}" class="team-avatar-img" alt="{name}">'
             else:
                 initials = get_initials(name)
-                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:210px; height:210px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
+                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:250px; height:250px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
 
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
@@ -823,13 +822,15 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
+    # Individual custom zoom controls: zoom=0.75 for Mukund & Milla, zoom=0.88 (zoomed out a bit) for Catherine
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
         "Lead Researcher & Ph.D. Candidate",
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
-        ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"]
+        ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
+        zoom=0.75, top_offset=0.28
     )
 
     display_member(
@@ -839,6 +840,7 @@ with tab_team:
         "UQAC / GRIL / CEN / Canada Research Chair",
         "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
         ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
+        zoom=0.75, top_offset=0.28,
         link_url="https://www.rautioaqualab.com/",
         link_label="Rautio AquaLab ↗"
     )
@@ -850,6 +852,7 @@ with tab_team:
         "Université Laval / GRIL / Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
         ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
+        zoom=0.88, top_offset=0.22,  # Zoomed out a bit more matching user request
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
     )
