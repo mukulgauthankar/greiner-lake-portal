@@ -859,14 +859,14 @@ with tab_team:
         "Prof. Catherine Girard",
         "Co-Supervisor & Co-Direction",
         "Université Laval",
+        "Institut de biologie intégrative et des systèmes (IBIS)",
         "Groupe de recherche interuniversitaire en limnologie (GRIL)",
-        "Centre d'études nordiques (CEN)",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation, exploring how thawing permafrost and glaciers release microbes into northern watersheds and food webs.",
         ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
         zoom=0.88, top_offset=0.22, left_offset=0.5,
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗",
-        inst2="Institut de biologie intégrative et des systèmes (IBIS)"
+        inst4="Centre d'études nordiques (CEN)"
     )
 
     st.markdown("---")
