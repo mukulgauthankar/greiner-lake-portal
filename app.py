@@ -791,7 +791,7 @@ with tab_team:
         except Exception:
             return None
 
-    def display_member(col, name, role, inst1, inst2, inst3, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
+    def display_member(col, name, role, inst1, inst2, inst3, inst4, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
         with col:
             avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset, left_offset=left_offset)
 
@@ -814,7 +814,8 @@ with tab_team:
                 f'<div style="font-size: 14px; font-weight: 600; color: #0284c7; margin-bottom: 4px;">{role}</div>'
                 f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst1}</div>'
                 f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst2}</div>'
-                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst3}</div>'
+                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst3}</div>'
+                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst4}</div>'
                 '</div>'
                 f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: justify; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
                 f'<div style="margin-top: 10px;">{btn_element}</div>'
