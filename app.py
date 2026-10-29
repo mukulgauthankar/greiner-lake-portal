@@ -110,7 +110,7 @@ st.markdown("""
     [data-testid="stImage"] > img {
         margin: 0 auto;
         display: block;
-        max-height: 400px;
+        max-height: 380px;
         object-fit: contain;
     }
 </style>
@@ -309,17 +309,14 @@ depth_filter = st.sidebar.radio(
     options=["Both Layers", "Surface", "Bottom"]
 )
 
-# Parameter Selector with Salinity, Depth, and Pressure included
+# Clean Parameter Selector (Core verified parameters)
 param_choice = st.sidebar.selectbox(
     "Parameter:",
     options=[
         ("temperature_c", "Temperature (°C)"),
         ("do_mg_l", "Dissolved O₂ concentration (mg/L)"),
         ("do_sat_pct", "Dissolved O₂ saturation (%)"),
-        ("spec_cond_us_cm", "Specific conductivity (µS/cm)"),
-        ("salinity", "Salinity (PSU)"),
-        ("depth", "Depth (m)"),
-        ("pressure", "Pressure (dbar)")
+        ("spec_cond_us_cm", "Specific conductivity (µS/cm)")
     ],
     format_func=lambda x: x[1]
 )
@@ -543,10 +540,11 @@ with tab_map:
                         continue
 
             if mooring_img is not None:
+                # Explicit height constraint applied so it balances the left image perfectly
                 st.image(
                     mooring_img,
                     caption="Figure: Sub-surface mooring array architecture.",
-                    use_container_width=True
+                    width=420
                 )
             else:
                 st.info("Mooring setup diagram image not found.")
@@ -767,11 +765,18 @@ with tab_team:
             im = Image.open(target_path).convert("RGBA")
             w, h = im.size
 
+            # Tighter face zoom crop (70% of min side, shifted slightly up to center on faces)
             min_side = min(w, h)
-            left = (w - min_side) // 2
-            top = (h - min_side) // 2
-            right = left + min_side
-            bottom = top + min_side
+            crop_size = int(min_side * 0.70)
+            left = (w - crop_size) // 2
+            top = max(0, int((h - crop_size) * 0.30))
+            right = left + crop_size
+            bottom = top + crop_size
+
+            if bottom > h:
+                bottom = h
+                top = h - crop_size
+
             im_square = im.crop((left, top, right, bottom))
             im_square = im_square.resize((size, size), Image.Resampling.LANCZOS)
 
