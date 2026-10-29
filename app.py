@@ -866,7 +866,7 @@ with tab_team:
         zoom=0.88, top_offset=0.22, left_offset=0.5,
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗",
-        inst4="Institut de biologie intégrative et des systèmes (IBIS)"
+        inst2="Institut de biologie intégrative et des systèmes (IBIS)"
     )
 
     st.markdown("---")
