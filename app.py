@@ -195,7 +195,7 @@ def load_data():
 
 df = load_data()
 
-# Uniform Logo Loader:
+# Uniform Logo & Asset Loader:
 @st.cache_data
 def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -206,6 +206,7 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
         test_paths = [
             p,
             os.path.join(base_dir, p),
+            os.path.join(base_dir, "assets", "team", fname),
             os.path.join(base_dir, "assets", "logos", fname),
             os.path.join(base_dir, "assets", "logos", fname.replace(" ", "")),
             os.path.join(base_dir, "assets", fname),
@@ -294,14 +295,17 @@ depth_filter = st.sidebar.radio(
     options=["Both Layers", "Surface", "Bottom"]
 )
 
-# PAR parameter removed per request
+# Parameter Selector with Salinity, Depth, and Pressure included
 param_choice = st.sidebar.selectbox(
     "Parameter:",
     options=[
         ("temperature_c", "Temperature (°C)"),
         ("do_mg_l", "Dissolved O₂ concentration (mg/L)"),
         ("do_sat_pct", "Dissolved O₂ saturation (%)"),
-        ("spec_cond_us_cm", "Specific conductivity (µS/cm)")
+        ("spec_cond_us_cm", "Specific conductivity (µS/cm)"),
+        ("salinity", "Salinity (PSU)"),
+        ("depth", "Depth (m)"),
+        ("pressure", "Pressure (dbar)")
     ],
     format_func=lambda x: x[1]
 )
@@ -406,64 +410,67 @@ with tab_map:
         else:
             st.info("Bathymetry image not found. Ensure 'GRL BATHY  PNG.png' is in your Greiner folder.")
 
-        # --- COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
+        # --- SIDE-BY-SIDE COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
         with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
-            st.markdown("#### 1. RBR maestro³ Multi-Channel Logger Architecture")
-            st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, CDOM).")
+            exp_col1, exp_col2 = st.columns(2)
 
-            sensor_paths = [
-                "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
-                "assets/ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
-                "rbr_sensor.png",
-                "rbr_maestro_exploded.png"
-            ]
-            sensor_img = None
-            for sp in sensor_paths:
-                full_sp = sp if os.path.isabs(sp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), sp)
-                if os.path.exists(full_sp):
-                    try:
-                        sensor_img = Image.open(full_sp)
-                        break
-                    except Exception:
-                        continue
+            with exp_col1:
+                st.markdown("#### 1. RBR maestro³ Sensor Architecture")
+                st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency time series.")
 
-            if sensor_img is not None:
-                st.image(
-                    sensor_img,
-                    caption="Figure: RBR maestro³ exploded view showing (1) End cap with connector, (2) Internal electronics/PCBA, (3) Main pressure case, (4) O-ring seal, (5) Bulkhead connector collar, (6) Sensor and electronics module, (7) Protective guard cage, and (8) Stainless steel securing screws.",
-                    use_container_width=True
-                )
-            else:
-                st.info("Sensor exploded diagram image not found. Ensure 'ede28e9d-98ae-4aa9-93f5-0267526055bc.png' is in your root Greiner folder.")
+                sensor_paths = [
+                    "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                    "assets/ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                    "rbr_sensor.png",
+                    "rbr_maestro_exploded.png"
+                ]
+                sensor_img = None
+                for sp in sensor_paths:
+                    full_sp = sp if os.path.isabs(sp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), sp)
+                    if os.path.exists(full_sp):
+                        try:
+                            sensor_img = Image.open(full_sp)
+                            break
+                        except Exception:
+                            continue
 
-            st.markdown("---")
-            st.markdown("#### 2. Dual-Depth Sub-Surface Mooring Rig Setup")
-            st.markdown("Architectural layout of the autonomous mooring array deployed in Greiner Lake, positioning instruments at the **Surface layer (~3 m)** and **Benthic layer (~7 m)** anchored securely to the basin floor.")
+                if sensor_img is not None:
+                    st.image(
+                        sensor_img,
+                        caption="Figure: RBR maestro³ exploded view (1-8).",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("Sensor exploded diagram image not found.")
 
-            mooring_paths = [
-                "Mooring setup.png",
-                "assets/Mooring setup.png",
-                "mooring_setup.png",
-                "mooring_rig.png"
-            ]
-            mooring_img = None
-            for mp in mooring_paths:
-                full_mp = mp if os.path.isabs(mp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), mp)
-                if os.path.exists(full_mp):
-                    try:
-                        mooring_img = Image.open(full_mp)
-                        break
-                    except Exception:
-                        continue
+            with exp_col2:
+                st.markdown("#### 2. Dual-Depth Mooring Setup")
+                st.markdown("Architectural layout of the autonomous mooring array deployed at Surface (~3 m) and Benthic (~7 m) strata.")
 
-            if mooring_img is not None:
-                st.image(
-                    mooring_img,
-                    caption="Figure: Sub-surface mooring rig architecture detailing the surface instrument sub-array (~3 m) and benthic instrument sub-array (~7 m) with acoustic/sub-surface buoyancy floats and deadweight anchor.",
-                    use_container_width=True
-                )
-            else:
-                st.info("Mooring setup diagram image not found. Ensure 'Mooring setup.png' is in your root Greiner folder.")
+                mooring_paths = [
+                    "Mooring setup.png",
+                    "assets/Mooring setup.png",
+                    "mooring_setup.png",
+                    "mooring_rig.png"
+                ]
+                mooring_img = None
+                for mp in mooring_paths:
+                    full_mp = mp if os.path.isabs(mp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), mp)
+                    if os.path.exists(full_mp):
+                        try:
+                            mooring_img = Image.open(full_mp)
+                            break
+                        except Exception:
+                            continue
+
+                if mooring_img is not None:
+                    st.image(
+                        mooring_img,
+                        caption="Figure: Sub-surface mooring array architecture.",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("Mooring setup diagram image not found.")
 
     with col_chars:
         st.subheader("Environmental & Limnological Profile")
@@ -754,13 +761,14 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
+    # Team members with exact .avif and .jpg filename mapping
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
         "Lead Researcher & Ph.D. Candidate",
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
-        ["assets/logos/mukund.jpg", "assets/mukund.jpg", "mukund.jpg"]
+        ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/mukund.jpg"]
     )
 
     display_member(
@@ -769,7 +777,7 @@ with tab_team:
         "Principal Investigator & Supervisor",
         "UQAC / GRIL / CEN / Canada Research Chair",
         "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
-        ["assets/logos/milla.jpg", "assets/milla.jpg", "milla.jpg"],
+        ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/milla.jpg"],
         link_url="https://www.rautioaqualab.com/",
         link_label="Rautio AquaLab ↗"
     )
@@ -780,7 +788,7 @@ with tab_team:
         "Co-Supervisor & Co-Direction",
         "Université Laval / GRIL / Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
-        ["assets/logos/catherine.jpg", "assets/catherine.jpg", "catherine.jpg"],
+        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/catherine.jpg"],
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
     )
@@ -875,6 +883,7 @@ with tab_team:
             os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "%20")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
         ]
         for tp in test_cp:
