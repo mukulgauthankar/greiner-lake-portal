@@ -791,7 +791,7 @@ with tab_team:
         except Exception:
             return None
 
-    def display_member(col, name, role, inst1, inst2, inst3, inst4, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
+    def display_member(col, name, role, inst1, inst2, inst3, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗", inst4=None):
         with col:
             avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset, left_offset=left_offset)
 
@@ -806,6 +806,8 @@ with tab_team:
             else:
                 btn_element = '<div style="height:32px;"></div>'
 
+            inst4_html = f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst4}</div>' if inst4 else ''
+
             card_html = (
                 '<div class="profile-card">'
                 '<div>'
@@ -815,7 +817,7 @@ with tab_team:
                 f'<div style="font-size: 12.5px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst1}</div>'
                 f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst2}</div>'
                 f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 2px;">{inst3}</div>'
-                f'<div style="font-size: 12px; font-weight: 500; color: #475569; margin-bottom: 10px;">{inst4}</div>'
+                f'{inst4_html}'
                 '</div>'
                 f'<div style="font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.55; text-align: justify; border-top: 1px solid #f1f5f9; paddingTop: 10px; flex-grow: 1;">{bio}</div>'
                 f'<div style="margin-top: 10px;">{btn_element}</div>'
@@ -857,14 +859,14 @@ with tab_team:
         "Prof. Catherine Girard",
         "Co-Supervisor & Co-Direction",
         "Université Laval",
-        "Institut de biologie intégrative et des systèmes (IBIS)",
         "Groupe de recherche interuniversitaire en limnologie (GRIL)",
         "Centre d'études nordiques (CEN)",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation, exploring how thawing permafrost and glaciers release microbes into northern watersheds and food webs.",
         ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
         zoom=0.88, top_offset=0.22, left_offset=0.5,
         link_url="https://patrimoinemicrobien.ca/",
-        link_label="Patrimoine Microbien ↗"
+        link_label="Patrimoine Microbien ↗",
+        inst4="Institut de biologie intégrative et des systèmes (IBIS)"
     )
 
     st.markdown("---")
