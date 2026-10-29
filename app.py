@@ -835,7 +835,7 @@ with tab_team:
         zoom=0.78, top_offset=0.41, left_offset=0.40
     )
 
-    # Prof. Milla Rautio (Corrigé pour respecter exactement 3 lignes d'institutions)
+    # Prof. Milla Rautio
     display_member(
         col_t2,
         "Prof. Milla Rautio",
@@ -843,7 +843,7 @@ with tab_team:
         "Canada Research Chair in Boreal and Polar Aquatic Ecology",
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Centre d'études nordiques (CEN)",
-        "Expertise in winter limnology, food web interactions, plankton dynamics, fatty acids, stable isotopes, and land-lake interactions across subarctic and high-latitude aquatic ecosystems. Lead PI for the FROST Research Project. Leads collaborative circumpolar initiatives examining climate impacts on northern aquatic systems.",
+        'Expertise in winter limnology, food web interactions, plankton dynamics, fatty acids, stable isotopes, and land-lake interactions across subarctic and high-latitude aquatic ecosystems. As Lead PI for the <a href="https://www.frost-lakes.com/" target="_blank" style="color: #0284c7; text-decoration: underline;">FROST Research Project</a>, she spearheads the collaborative circumpolar initiatives examining climate impacts on northern aquatic systems.',
         ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
         zoom=0.75, top_offset=0.28, left_offset=0.5,
         link_url="https://www.rautioaqualab.com/",
