@@ -856,6 +856,7 @@ with tab_team:
         "Prof. Catherine Girard",
         "Co-Supervisor & Co-Direction",
         "Université Laval",
+        "Institut de biologie intégrative et des systèmes (IBIS)",
         "Groupe de recherche interuniversitaire en limnologie (GRIL)",
         "Centre d'études nordiques (CEN)",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation, exploring how thawing permafrost and glaciers release microbes into northern watersheds and food webs.",
