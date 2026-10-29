@@ -223,8 +223,9 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
             os.path.join(base_dir, "assets", "team", fname),
             os.path.join(base_dir, "assets", "logos", fname),
             os.path.join(base_dir, "assets", "logos", fname.replace(" ", "")),
-            os.path.join(base_dir, "assets", "team", fname.replace(" ", "%20")),
-            os.path.join(base_dir, "assets", fname)
+            os.path.join(base_dir, "assets", "fname"),
+            os.path.join(base_dir, "logos", fname),
+            os.path.join(base_dir, fname)
         ]
         for tp in test_paths:
             if os.path.exists(tp):
@@ -735,7 +736,7 @@ with tab_team:
         parts = clean.split()
         return f"{parts[0][0]}{parts[-1][0]}".upper()
 
-    def get_circular_avatar_base64(img_paths, size=300, zoom=0.75, top_offset=0.30):
+    def get_circular_avatar_base64(img_paths, size=300, zoom=0.75, top_offset=0.30, left_offset=0.5):
         target_path = None
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -766,14 +767,14 @@ with tab_team:
 
             min_side = min(w, h)
             crop_size = int(min_side * zoom)
-            left = (w - crop_size) // 2
-            top = max(0, int((h - crop_size) * top_offset))
+
+            # Horizontal (left/right) control using left_offset
+            left = max(0, min(w - crop_size, int((w - crop_size) * left_offset)))
+            # Vertical (up/down) control using top_offset
+            top = max(0, min(h - crop_size, int((h - crop_size) * top_offset)))
+
             right = left + crop_size
             bottom = top + crop_size
-
-            if bottom > h:
-                bottom = h
-                top = h - crop_size
 
             im_square = im.crop((left, top, right, bottom))
             im_square = im_square.resize((size, size), Image.Resampling.LANCZOS)
@@ -792,9 +793,9 @@ with tab_team:
         except Exception:
             return None
 
-    def display_member(col, name, role, inst, bio, img_keys, zoom=0.75, top_offset=0.30, link_url=None, link_label="Visit Lab Website ↗"):
+    def display_member(col, name, role, inst, bio, img_keys, zoom=0.75, top_offset=0.30, left_offset=0.5, link_url=None, link_label="Visit Lab Website ↗"):
         with col:
-            avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset)
+            avatar_b64 = get_circular_avatar_base64(img_keys, zoom=zoom, top_offset=top_offset, left_offset=left_offset)
 
             if avatar_b64:
                 avatar_html = f'<img src="{avatar_b64}" class="team-avatar-img" alt="{name}">'
@@ -821,7 +822,7 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Mukund adjusted with zoom=0.78 and top_offset=0.32 to move face up into the exact center
+    # Mukund adjusted with left_offset=0.40 (shifts photo right) and top_offset=0.20 (centers vertically)
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
@@ -829,7 +830,7 @@ with tab_team:
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
-        zoom=0.78, top_offset=0.41, left_offset=0.40
+        zoom=0.75, top_offset=0.20, left_offset=0.40
     )
 
     display_member(
@@ -839,7 +840,7 @@ with tab_team:
         "UQAC / GRIL / CEN / Canada Research Chair",
         "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
         ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
-        zoom=0.75, top_offset=0.28,
+        zoom=0.75, top_offset=0.28, left_offset=0.5,
         link_url="https://www.rautioaqualab.com/",
         link_label="Rautio AquaLab ↗"
     )
@@ -850,8 +851,8 @@ with tab_team:
         "Co-Supervisor & Co-Direction",
         "Université Laval / GRIL / Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
-        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
-        zoom=0.88, top_offset=0.22,
+        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/cethylene.jpg"],
+        zoom=0.88, top_offset=0.22, left_offset=0.5,
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
     )
