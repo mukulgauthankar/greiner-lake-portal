@@ -121,7 +121,7 @@ CHRONOLOGICAL_YEAR_ORDER = [
     "2021-2022", "2022-2023", "2023-2024", "2024-2025", "2025-2026"
 ]
 
-# ----------------- LAKE DOY & TICK LOGIC (FROM YOUR SCRIPT) -----------------
+# ----------------- LAKE DOY & TICK LOGIC -----------------
 ANCHOR_MONTH = 8
 ANCHOR_DAY = 1
 
@@ -195,8 +195,7 @@ def load_data():
 
 df = load_data()
 
-# Your Best Uniform Logo Loader:
-# Applies uniform HD canvas scaling to ALL logos so every single partner logo shares identical visual height and weight.
+# Uniform Logo Loader:
 @st.cache_data
 def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=0.88):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -226,7 +225,6 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
     try:
         im = Image.open(target_path).convert("RGBA")
 
-        # Smart Autocrop: crop transparent AND solid white padding around logo
         alpha = im.split()[-1]
         bbox_alpha = alpha.getbbox()
 
@@ -259,12 +257,10 @@ def get_standardized_logo(path_candidates, target_canvas=(1600, 700), pad_ratio=
             )
             im = im.crop(b_expanded)
 
-        # Scale image within the target HD uniform canvas
         max_w = int(target_canvas[0] * pad_ratio)
         max_h = int(target_canvas[1] * pad_ratio)
         im.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
 
-        # Center on high-res transparent canvas
         canvas = Image.new("RGBA", target_canvas, (255, 255, 255, 0))
         offset = ((target_canvas[0] - im.width) // 2, (target_canvas[1] - im.height) // 2)
         canvas.paste(im, offset, im)
@@ -298,14 +294,14 @@ depth_filter = st.sidebar.radio(
     options=["Both Layers", "Surface", "Bottom"]
 )
 
+# PAR parameter removed per request
 param_choice = st.sidebar.selectbox(
     "Parameter:",
     options=[
         ("temperature_c", "Temperature (°C)"),
         ("do_mg_l", "Dissolved O₂ concentration (mg/L)"),
         ("do_sat_pct", "Dissolved O₂ saturation (%)"),
-        ("spec_cond_us_cm", "Specific conductivity (µS/cm)"),
-        ("par_umol_m2_s", "PAR (µmol photons m⁻² s⁻¹)")
+        ("spec_cond_us_cm", "Specific conductivity (µS/cm)")
     ],
     format_func=lambda x: x[1]
 )
@@ -413,7 +409,7 @@ with tab_map:
         # --- COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
         with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
             st.markdown("#### 1. RBR maestro³ Multi-Channel Logger Architecture")
-            st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, PAR, CDOM).")
+            st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency limnological time series (Temperature, Dissolved Oxygen, Conductivity, CDOM).")
 
             sensor_paths = [
                 "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
@@ -878,6 +874,7 @@ with tab_team:
             cp,
             os.path.join(os.path.dirname(os.path.abspath(__file__)), cp),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
         ]
         for tp in test_cp:
