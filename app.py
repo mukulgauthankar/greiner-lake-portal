@@ -422,68 +422,6 @@ with tab_map:
         else:
             st.info("Bathymetry image not found. Ensure 'GRL BATHY  PNG.png' is in your Greiner folder.")
 
-        # --- SIDE-BY-SIDE COLLAPSIBLE EXPANDER FOR INSTRUMENTATION & MOORING SETUP ---
-        with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
-            exp_col1, exp_col2 = st.columns(2)
-
-            with exp_col1:
-                st.markdown("#### 1. RBR maestro³ Sensor Architecture")
-                st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency time series.")
-
-                sensor_paths = [
-                    "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
-                    "assets/ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
-                    "rbr_sensor.png",
-                    "rbr_maestro_exploded.png"
-                ]
-                sensor_img = None
-                for sp in sensor_paths:
-                    full_sp = sp if os.path.isabs(sp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), sp)
-                    if os.path.exists(full_sp):
-                        try:
-                            sensor_img = Image.open(full_sp)
-                            break
-                        except Exception:
-                            continue
-
-                if sensor_img is not None:
-                    st.image(
-                        sensor_img,
-                        caption="Figure: RBR maestro³ exploded view (1-8).",
-                        use_container_width=True
-                    )
-                else:
-                    st.info("Sensor exploded diagram image not found.")
-
-            with exp_col2:
-                st.markdown("#### 2. Dual-Depth Mooring Setup")
-                st.markdown("Architectural layout of the autonomous mooring array deployed at Surface (~3 m) and Benthic (~7 m) strata.")
-
-                mooring_paths = [
-                    "Mooring setup.png",
-                    "assets/Mooring setup.png",
-                    "mooring_setup.png",
-                    "mooring_rig.png"
-                ]
-                mooring_img = None
-                for mp in mooring_paths:
-                    full_mp = mp if os.path.isabs(mp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), mp)
-                    if os.path.exists(full_mp):
-                        try:
-                            mooring_img = Image.open(full_mp)
-                            break
-                        except Exception:
-                            continue
-
-                if mooring_img is not None:
-                    st.image(
-                        mooring_img,
-                        caption="Figure: Sub-surface mooring array architecture.",
-                        use_container_width=True
-                    )
-                else:
-                    st.info("Mooring setup diagram image not found.")
-
     with col_chars:
         st.subheader("Environmental & Limnological Profile")
 
@@ -547,6 +485,69 @@ with tab_map:
 </div>
 """
         st.markdown(html_cards, unsafe_allow_html=True)
+
+    # --- FULL-WIDTH SIDE-BY-SIDE EXPANDER STRETCHED ACROSS THE PAGE ---
+    st.markdown("---")
+    with st.expander("🔍 Click to Expand: RBR maestro³ Sensor & Sub-Surface Mooring Architecture"):
+        exp_col1, exp_col2 = st.columns(2)
+
+        with exp_col1:
+            st.markdown("#### 1. RBR maestro³ Sensor Architecture")
+            st.markdown("Exploded component schematic of the autonomous multiparameter logger recording high-frequency time series.")
+
+            sensor_paths = [
+                "ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                "assets/ede28e9d-98ae-4aa9-93f5-0267526055bc.png",
+                "rbr_sensor.png",
+                "rbr_maestro_exploded.png"
+            ]
+            sensor_img = None
+            for sp in sensor_paths:
+                full_sp = sp if os.path.isabs(sp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), sp)
+                if os.path.exists(full_sp):
+                    try:
+                        sensor_img = Image.open(full_sp)
+                        break
+                    except Exception:
+                        continue
+
+            if sensor_img is not None:
+                st.image(
+                    sensor_img,
+                    caption="Figure: RBR maestro³ exploded view (1-8).",
+                    use_container_width=True
+                )
+            else:
+                st.info("Sensor exploded diagram image not found.")
+
+        with exp_col2:
+            st.markdown("#### 2. Dual-Depth Mooring Setup")
+            st.markdown("Architectural layout of the autonomous mooring array deployed at Surface (~3 m) and Benthic (~7 m) strata.")
+
+            mooring_paths = [
+                "Mooring setup.png",
+                "assets/Mooring setup.png",
+                "mooring_setup.png",
+                "mooring_rig.png"
+            ]
+            mooring_img = None
+            for mp in mooring_paths:
+                full_mp = mp if os.path.isabs(mp) else os.path.join(os.path.dirname(os.path.abspath(__file__)), mp)
+                if os.path.exists(full_mp):
+                    try:
+                        mooring_img = Image.open(full_mp)
+                        break
+                    except Exception:
+                        continue
+
+            if mooring_img is not None:
+                st.image(
+                    mooring_img,
+                    caption="Figure: Sub-surface mooring array architecture.",
+                    use_container_width=True
+                )
+            else:
+                st.info("Mooring setup diagram image not found.")
 
 # ----------------- OBSERVATIONAL PLOTS TABS -----------------
 if not selected_cycles:
@@ -746,6 +747,8 @@ with tab_team:
                 os.path.join(base_dir, p),
                 os.path.join(base_dir, "assets", "team", fname),
                 os.path.join(base_dir, "assets", "logos", fname),
+                os.path.join(base_dir, "assets", "logos", fname.replace(" ", "")),
+                os.path.join(base_dir, "assets", "team", fname.replace(" ", "%20")),
                 os.path.join(base_dir, "assets", fname)
             ]
             for tp in test_paths:
@@ -762,7 +765,6 @@ with tab_team:
             im = Image.open(target_path).convert("RGBA")
             w, h = im.size
 
-            # Smart square center crop
             min_side = min(w, h)
             left = (w - min_side) // 2
             top = (h - min_side) // 2
@@ -771,7 +773,6 @@ with tab_team:
             im_square = im.crop((left, top, right, bottom))
             im_square = im_square.resize((size, size), Image.Resampling.LANCZOS)
 
-            # Circular mask
             mask = Image.new("L", (size, size), 0)
             draw = ImageDraw.Draw(mask)
             draw.ellipse((0, 0, size, size), fill=255)
@@ -821,7 +822,7 @@ with tab_team:
         "Lead Researcher & Ph.D. Candidate",
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
-        ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/mukund.jpg"]
+        ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"]
     )
 
     display_member(
@@ -830,7 +831,7 @@ with tab_team:
         "Principal Investigator & Supervisor",
         "UQAC / GRIL / CEN / Canada Research Chair",
         "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
-        ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/milla.jpg"],
+        ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
         link_url="https://www.rautioaqualab.com/",
         link_label="Rautio AquaLab ↗"
     )
@@ -841,7 +842,7 @@ with tab_team:
         "Co-Supervisor & Co-Direction",
         "Université Laval / GRIL / Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
-        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/catherine.jpg"],
+        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
     )
@@ -880,7 +881,7 @@ with tab_team:
     r2_c1, r2_c2, r2_c3 = st.columns(3)
     render_native_logo(
         r2_c1,
-        ["assets/logos/logo_web_lpm_bleu-1hhh.png", "assets/logo_web_lpm_bleu-1hhh.png", "logo_web_lpm_bleu-1hhh.png"],
+        ["assets/logos/logo_web_lpm_bleu-1hhh.png", "assets/logos/logo_web_lpm_bleu-1hhh.png", "logo_web_lpm_bleu-1hhh.png"],
         "Laboratoire de patrimoine microbien (Girard Lab)"
     )
     render_native_logo(
