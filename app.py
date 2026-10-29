@@ -835,29 +835,31 @@ with tab_team:
         zoom=0.78, top_offset=0.41, left_offset=0.40
     )
 
+    # Prof. Milla Rautio (Corrigé pour respecter exactement 3 lignes d'institutions)
     display_member(
         col_t2,
         "Prof. Milla Rautio",
         "Principal Investigator & Supervisor",
-        "UQAC",
-        "GRIL / CEN",
-        "Canada Research Chair",
-        "Senior aquatic ecologist directing the High-Arctic limnological research program in Greiner Lake, focusing on cold-water biogeochemistry and carbon dynamics.",
+        "Canada Research Chair in Boreal and Polar Aquatic Ecology",
+        "Université du Québec à Chicoutimi (UQAC) / GRIL",
+        "Centre d'études nordiques (CEN)",
+        "Expertise in winter limnology, food web interactions, plankton dynamics, fatty acids, stable isotopes, and land-lake interactions across subarctic and high-latitude aquatic ecosystems.",
         ["Milla Rautio.avif", "milla.jpg", "milla.png", "assets/team/Milla Rautio.avif", "assets/team/Milla%20Rautio.avif", "assets/milla.jpg"],
         zoom=0.75, top_offset=0.28, left_offset=0.5,
         link_url="https://www.rautioaqualab.com/",
         link_label="Rautio AquaLab ↗"
     )
 
+    # Prof. Catherine Girard
     display_member(
         col_t3,
         "Prof. Catherine Girard",
         "Co-Supervisor & Co-Direction",
         "Université Laval",
-        "GRIL",
-        "Institut nordique du Québec",
-        "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
-        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/cethylene.jpg"],
+        "Groupe de recherche interuniversitaire en limnologie (GRIL)",
+        "Centre d'études nordiques (CEN)",
+        "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation, exploring how thawing permafrost and glaciers release microbes into northern watersheds and food webs.",
+        ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
         zoom=0.88, top_offset=0.22, left_offset=0.5,
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
