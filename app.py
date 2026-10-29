@@ -70,15 +70,15 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 520px;
+        height: 580px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
     }
     .team-avatar-img {
-        width: 250px;
-        height: 250px;
+        width: 300px;
+        height: 300px;
         border-radius: 50%;
         object-fit: cover;
         margin: 0 auto 12px auto;
@@ -801,7 +801,7 @@ with tab_team:
                 avatar_html = f'<img src="{avatar_b64}" class="team-avatar-img" alt="{name}">'
             else:
                 initials = get_initials(name)
-                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:250px; height:250px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; color:#475569;">{initials}</div>'
+                avatar_html = f'<div style="background-color:#e2e8f0; border-radius:50%; width:300px; height:300px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:600; color:#475569;">{initials}</div>'
 
             if link_url:
                 btn_element = f'<a href="{link_url}" target="_blank" class="lab-link-btn" style="font-size:12px; font-weight:600;">{link_label}</a>'
@@ -822,7 +822,7 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Individual custom zoom controls: zoom=0.75 for Mukund & Milla, zoom=0.88 (zoomed out a bit) for Catherine
+    # Individual custom zoom and centering: Mukund adjusted slightly for face/centering, Milla at 0.75, Catherine zoomed out at 0.88
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
@@ -830,7 +830,7 @@ with tab_team:
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
-        zoom=0.75, top_offset=0.28
+        zoom=0.82, top_offset=0.22
     )
 
     display_member(
@@ -852,7 +852,7 @@ with tab_team:
         "Université Laval / GRIL / Institut nordique du Québec",
         "Specializes in Arctic microbial ecology, environmental genomics, and contaminant bioaccumulation across northern polar aquatic systems.",
         ["Catherine Girard.avif", "catherine.jpg", "catherine.png", "assets/team/Catherine Girard.avif", "assets/team/Catherine%20Girard.avif", "assets/catherine.jpg"],
-        zoom=0.88, top_offset=0.22,  # Zoomed out a bit more matching user request
+        zoom=0.88, top_offset=0.22,
         link_url="https://patrimoinemicrobien.ca/",
         link_label="Patrimoine Microbien ↗"
     )
