@@ -70,7 +70,7 @@ st.markdown("""
         padding: 22px 18px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 580px;
+        height: 600px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -822,7 +822,7 @@ with tab_team:
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # Individual custom zoom and centering: Mukund adjusted slightly for face/centering, Milla at 0.75, Catherine zoomed out at 0.88
+    # Mukund adjusted with zoom=0.78 and top_offset=0.17 for perfect centering and balanced framing
     display_member(
         col_t1,
         "Mukund R. Gauthankar",
@@ -830,7 +830,7 @@ with tab_team:
         "Université du Québec à Chicoutimi (UQAC) / GRIL",
         "Leads autonomous mooring time-series processing, under-ice hydrodynamics, oxygen balance modeling, and microbial food web dynamics.",
         ["Mukund Ramesh Gauthankar.jpg", "mukund.jpg", "mukund.png", "assets/team/Mukund Ramesh Gauthankar.jpg", "assets/team/Mukund%20Ramesh%20Gauthankar.jpg", "assets/mukund.jpg"],
-        zoom=0.82, top_offset=0.20
+        zoom=0.78, top_offset=0.17
     )
 
     display_member(
@@ -948,7 +948,7 @@ with tab_team:
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "")),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname.replace(" ", "%20")),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", fname)
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos", fname)
         ]
         for tp in test_cp:
             if os.path.exists(tp):
